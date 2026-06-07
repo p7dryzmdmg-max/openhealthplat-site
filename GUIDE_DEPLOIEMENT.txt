@@ -1,0 +1,182 @@
+# GUIDE DE MISE EN LIGNE — OpenHealthPlat
+# Temps total estimé : 20-30 minutes
+# Coût : 0 € (100% gratuit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+## RÉSUMÉ DE CE QUE VOUS ALLEZ DÉPLOYER
+
+| Composant       | Service         | URL finale                              |
+|-----------------|-----------------|------------------------------------------|
+| Landing page    | Vercel (gratuit)| https://openhealthplat.vercel.app        |
+| API backend     | Render (gratuit)| https://openhealthplat-api.onrender.com  |
+
+
+## ═══════════════════════════════════════════════════
+## ÉTAPE 1 — Créer un dépôt GitHub (3 min)
+## ═══════════════════════════════════════════════════
+
+1. Allez sur https://github.com et connectez-vous (ou créez un compte gratuit).
+2. Cliquez "New repository"
+3. Nom : openhealthplat-site
+4. Visibilité : Public (requis pour Vercel/Render gratuit)
+5. Cliquez "Create repository"
+
+Ensuite, dans un terminal (ou GitHub Desktop) :
+
+   git init
+   git add .
+   git commit -m "Initial commit - OpenHealthPlat MVP"
+   git remote add origin https://github.com/VOTRE_USERNAME/openhealthplat-site.git
+   git push -u origin main
+
+
+## ═══════════════════════════════════════════════════
+## ÉTAPE 2 — Déployer la LANDING PAGE sur Vercel (5 min)
+## ═══════════════════════════════════════════════════
+
+1. Allez sur https://vercel.com
+2. Cliquez "Sign Up" → choisissez "Continue with GitHub"
+3. Autorisez Vercel à accéder à vos repos
+4. Cliquez "Add New Project"
+5. Sélectionnez le repo "openhealthplat-site"
+6. Framework Preset : choisissez "Other"
+7. Root Directory : laisser "/"  (la racine du projet)
+8. Cliquez "Deploy"
+
+✅ En 2 minutes, votre site est en ligne sur :
+   https://openhealthplat.vercel.app
+
+Pour un domaine personnalisé (ex: openhealthplat.org) :
+→ Dans Vercel Dashboard > Settings > Domains > Add Domain
+
+
+## ═══════════════════════════════════════════════════
+## ÉTAPE 3 — Déployer l'API BACKEND sur Render (10 min)
+## ═══════════════════════════════════════════════════
+
+1. Allez sur https://render.com
+2. Cliquez "Get Started for Free"
+3. Connectez-vous avec GitHub
+4. Cliquez "New +" → "Web Service"
+5. Connectez votre repo GitHub
+6. Configurez ainsi :
+   - Name         : openhealthplat-api
+   - Region        : Frankfurt (Europe) ou Oregon (US)
+   - Branch        : main
+   - Root Directory: api
+   - Runtime       : Python 3
+   - Build Command : pip install -r requirements.txt
+   - Start Command : uvicorn main:app --host 0.0.0.0 --port $PORT
+   - Instance Type : Free
+7. Cliquez "Create Web Service"
+
+✅ L'API sera disponible sur :
+   https://openhealthplat-api.onrender.com
+   Documentation interactive : https://openhealthplat-api.onrender.com/api/docs
+
+⚠️  NOTE : Le plan gratuit Render "dort" après 15 min d'inactivité.
+   Premier appel : 30-60 sec de démarrage à froid. C'est normal.
+
+
+## ═══════════════════════════════════════════════════
+## ÉTAPE 4 — Connecter le frontend à l'API (2 min)
+## ═══════════════════════════════════════════════════
+
+Dans index.html, ajoutez cette variable en haut du bloc <script> :
+
+   const API_URL = "https://openhealthplat-api.onrender.com";
+
+Puis mettez à jour le formulaire d'inscription pour envoyer vers l'API :
+
+   async function handleSubmit(e) {
+     e.preventDefault();
+     const email = e.target.querySelector('input[type="email"]').value;
+     await fetch(API_URL + "/api/v1/auth/register", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ email, password: "temp123", full_name: "Nouveau", role: "patient" })
+     });
+     showToast();
+     e.target.reset();
+   }
+
+Committez et pushez → Vercel redéploie automatiquement.
+
+
+## ═══════════════════════════════════════════════════
+## ÉTAPE 5 — Vérification finale (2 min)
+## ═══════════════════════════════════════════════════
+
+Checklist de validation :
+
+[ ] https://openhealthplat.vercel.app → landing page s'affiche ✓
+[ ] https://openhealthplat-api.onrender.com → {"status": "operational"} ✓
+[ ] https://openhealthplat-api.onrender.com/api/docs → Swagger UI ✓
+[ ] Formulaire d'inscription → toast de confirmation ✓
+[ ] Navigation mobile → responsive ✓
+[ ] Score Lighthouse Performance > 90 (tester sur pagespeed.web.dev) ✓
+
+
+## ═══════════════════════════════════════════════════
+## ÉVOLUTION VERS PRODUCTION (optionnel)
+## ═══════════════════════════════════════════════════
+
+Quand vous avez de vrais utilisateurs :
+
+1. Base de données PostgreSQL (gratuit) :
+   → Sur Render : New > PostgreSQL > Free plan
+   → Ajouter variable d'env DATABASE_URL dans Render Dashboard
+   → Remplacer le dict DB{} par SQLAlchemy + Alembic dans main.py
+
+2. Hébergement certifié HDS (France) :
+   → OVHcloud Hosted Private Cloud (plan certifié HDS)
+   → Budget : ~150 €/mois pour une infrastructure minimale conforme
+
+3. Authentification renforcée :
+   → Ajouter Keycloak (docker-compose) ou Auth0 free tier
+   → Activer TOTP (Google Authenticator)
+
+4. Monitoring :
+   → Grafana Cloud (free tier 10k metrics/mois)
+   → UptimeRobot (80 monitors gratuits, alertes email)
+
+
+## ═══════════════════════════════════════════════════
+## STRUCTURE DES FICHIERS LIVRÉS
+## ═══════════════════════════════════════════════════
+
+openhealthplat-site/
+├── index.html          ← Landing page (Vercel)
+├── vercel.json         ← Config Vercel + headers sécurité
+├── .gitignore
+└── api/
+    ├── main.py         ← Backend FastAPI (12 endpoints)
+    ├── requirements.txt
+    ├── render.yaml     ← Config Render (auto-deploy)
+    ├── Procfile        ← Démarrage du serveur
+    └── Dockerfile      ← Auto-hébergement / Raspberry Pi
+
+
+## ═══════════════════════════════════════════════════
+## ENDPOINTS API DISPONIBLES
+## ═══════════════════════════════════════════════════
+
+GET  /                                → Infos service
+GET  /api/health                      → Health check
+POST /api/v1/auth/register            → Inscription
+POST /api/v1/auth/login               → Connexion → Token JWT
+GET  /api/v1/auth/me                  → Profil utilisateur (auth)
+GET  /api/v1/patients/{id}/record     → Lire dossier médical (auth)
+PUT  /api/v1/patients/{id}/record     → Mettre à jour dossier (auth)
+GET  /api/v1/patients/{id}/record/fhir → Export FHIR R4 (auth)
+POST /api/v1/appointments             → Créer rendez-vous (auth)
+GET  /api/v1/appointments             → Lister mes RDV (auth)
+DELETE /api/v1/appointments/{id}      → Annuler RDV (auth)
+POST /api/v1/consultations/room       → Créer salle Jitsi (auth)
+POST /api/v1/messages                 → Envoyer message (auth)
+GET  /api/v1/messages                 → Mes messages (auth)
+GET  /api/v1/stats                    → Stats anonymisées (public)
+
+(auth) = Nécessite le header Authorization: Bearer <token>
+
+Testez directement sur : https://openhealthplat-api.onrender.com/api/docs

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenHealthPlat — Sante numerique open source, 100% gratuite</title>
+  <meta name="description" content="Plateforme de sante numerique open source, gratuite. DMP, teleconsultation, RDV. RGPD et HDS. Offline-ready." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#000;--bg2:#0a0a0a;--bg3:#111;--bgc:#161616;
+      --brd:rgba(255,255,255,.08);--brdh:rgba(255,255,255,.18);
+      --txt:#f5f5f7;--txt2:#a1a1a6;--txt3:#6e6e73;
+      --blue:#2997ff;--blueh:#0077ed;
+      --green:#30d158;--greeng:rgba(48,209,88,.15);
+      --orange:#ff9f0a;--purple:#bf5af2;
+      --surf:rgba(255,255,255,.04);--surfh:rgba(255,255,255,.07);
+      --shadow:0 8px 32px rgba(0,0,0,.5);--shadowl:0 24px 80px rgba(0,0,0,.6);
+      --ease:cubic-bezier(.25,.46,.45,.94);
+      --font:-apple-system,"SF Pro Display","Helvetica Neue","Inter",sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--txt);font-family:var(--font);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:inherit}
+    img{display:block;max-width:100%}
+    button{cursor:pointer;font-family:var(--font);border:none;outline:none}
+    .con{max-width:1080px;margin:0 auto;padding:0 24px}
+    .con-n{max-width:720px;margin:0 auto;padding:0 24px}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;display:flex;align-items:center;
+      backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
+      background:rgba(0,0,0,.75);border-bottom:1px solid var(--brd);transition:transform .35s var(--ease)}
+    nav .con{width:100%;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;letter-spacing:-.02em}
+    .nav-dot{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--blue));
+      display:flex;align-items:center;justify-content:center;font-size:14px}
+    .nav-links{display:flex;align-items:center;gap:32px}
+    .nav-links a{font-size:14px;color:var(--txt2);transition:color .2s}
+    .nav-links a:hover{color:var(--txt)}
+    .nav-cta{background:var(--blue);color:#fff;font-size:14px;font-weight:500;padding:8px 18px;
+      border-radius:980px;transition:background .2s,transform .15s}
+    .nav-cta:hover{background:var(--blueh);transform:scale(1.03)}
+
+    /* HERO */
+    .hero{padding:160px 0 120px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);
+      width:900px;height:600px;
+      background:radial-gradient(ellipse,rgba(48,209,88,.08) 0%,rgba(41,151,255,.06) 40%,transparent 70%);
+      pointer-events:none}
+    .badge{display:inline-flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--brd);
+      border-radius:980px;padding:6px 16px;font-size:13px;color:var(--green);letter-spacing:.02em;margin-bottom:32px}
+    .badge-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    h1.hero-title{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:700;letter-spacing:-.045em;
+      line-height:1.05;margin-bottom:24px;max-width:820px;margin-left:auto;margin-right:auto}
+    .acc-g{color:var(--green)}.acc-b{color:var(--blue)}
+    .hero-sub{font-size:clamp(1rem,2vw,1.25rem);color:var(--txt2);max-width:560px;margin:0 auto 40px;line-height:1.6}
+    .ctas{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+    .btn-p{background:var(--blue);color:#fff;font-size:17px;font-weight:400;padding:14px 28px;
+      border-radius:980px;transition:background .2s,transform .15s,box-shadow .2s;
+      display:inline-flex;align-items:center;gap:8px}
+    .btn-p:hover{background:var(--blueh);transform:scale(1.02);box-shadow:0 0 32px rgba(41,151,255,.25)}
+    .btn-g{background:transparent;color:var(--blue);border:1px solid rgba(41,151,255,.35);
+      font-size:17px;padding:14px 28px;border-radius:980px;transition:border-color .2s,background .2s}
+    .btn-g:hover{border-color:var(--blue);background:rgba(41,151,255,.07)}
+
+    /* MOCKUP */
+    .mockup{margin-top:80px;border-radius:16px;overflow:hidden;border:1px solid var(--brd);
+      box-shadow:var(--shadowl);background:var(--bgc);max-width:900px;margin-left:auto;margin-right:auto}
+    .mock-bar{background:var(--bg3);height:40px;display:flex;align-items:center;padding:0 16px;gap:8px;
+      border-bottom:1px solid var(--brd)}
+    .dr{width:12px;height:12px;border-radius:50%;background:#ff5f57}
+    .dy{width:12px;height:12px;border-radius:50%;background:#febc2e}
+    .dg{width:12px;height:12px;border-radius:50%;background:#28c840}
+    .mock-url{flex:1;text-align:center;font-size:13px;color:var(--txt3)}
+    .mock-body{padding:32px;display:grid;grid-template-columns:220px 1fr;gap:24px;min-height:360px}
+    .mock-sb{background:var(--bg3);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px}
+    .mni{padding:10px 12px;border-radius:8px;font-size:13px;color:var(--txt2);display:flex;align-items:center;gap:10px}
+    .mni.active{background:var(--surfh);color:var(--txt)}
+    .mni-ico{font-size:16px;width:20px;text-align:center}
+    .mock-main{display:flex;flex-direction:column;gap:16px}
+    .mock-hr{display:flex;align-items:center;justify-content:space-between}
+    .mock-t{font-size:20px;font-weight:600;letter-spacing:-.02em}
+    .badge-g{background:var(--greeng);color:var(--green);border:1px solid rgba(48,209,88,.25);
+      padding:4px 12px;border-radius:980px;font-size:12px}
+    .mock-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .mc{background:var(--bg3);border-radius:12px;padding:16px;border:1px solid var(--brd)}
+    .mc-lbl{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .mc-val{font-size:22px;font-weight:600;letter-spacing:-.03em}
+    .mock-list{background:var(--bg3);border-radius:12px;overflow:hidden;border:1px solid var(--brd)}
+    .ml-h{padding:12px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--brd)}
+    .ml-i{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+    .ml-i:last-child{border-bottom:none}
+    .av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:600}
+    .pill{padding:3px 10px;border-radius:980px;font-size:11px;font-weight:500}
+    .pill-g{background:rgba(48,209,88,.15);color:var(--green)}
+    .pill-b{background:rgba(41,151,255,.15);color:var(--blue)}
+    .pill-o{background:rgba(255,159,10,.15);color:var(--orange)}
+
+    /* LOGOS */
+    .logos{padding:48px 0;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd)}
+    .logos-lbl{text-align:center;font-size:13px;color:var(--txt3);margin-bottom:28px;letter-spacing:.04em;text-transform:uppercase}
+    .logos-row{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+    .li-item{font-size:14px;color:var(--txt3);font-weight:500;display:flex;align-items:center;gap:8px}
+
+    /* SECTION */
+    .sec{padding:120px 0}
+    .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:16px;font-weight:500}
+    .sec-title{font-size:clamp(2rem,4vw,3rem);font-weight:700;letter-spacing:-.04em;line-height:1.1;margin-bottom:20px}
+    .sec-sub{font-size:1.1rem;color:var(--txt2);line-height:1.6;max-width:540px}
+
+    /* FEATURES */
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:80px;
+      background:var(--brd);border-radius:20px;overflow:hidden}
+    .fc{background:var(--bg2);padding:40px 32px;transition:background .3s var(--ease)}
+    .fc:hover{background:var(--bgc)}
+    .fi{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+      font-size:22px;margin-bottom:20px}
+    .fi-g{background:linear-gradient(135deg,rgba(48,209,88,.2),rgba(48,209,88,.05))}
+    .fi-b{background:linear-gradient(135deg,rgba(41,151,255,.2),rgba(41,151,255,.05))}
+    .fi-o{background:linear-gradient(135deg,rgba(255,159,10,.2),rgba(255,159,10,.05))}
+    .fi-p{background:linear-gradient(135deg,rgba(191,90,242,.2),rgba(191,90,242,.05))}
+    .fi-r{background:linear-gradient(135deg,rgba(255,69,58,.2),rgba(255,69,58,.05))}
+    .fi-t{background:linear-gradient(135deg,rgba(100,210,255,.2),rgba(100,210,255,.05))}
+    .fc-title{font-size:17px;font-weight:600;margin-bottom:10px;letter-spacing:-.02em}
+    .fc-desc{font-size:14px;color:var(--txt2);line-height:1.6}
+
+    /* STATS */
+    .stats{padding:100px 0;background:linear-gradient(180deg,transparent,var(--bg3) 30%,var(--bg3) 70%,transparent)}
+    .stats-g{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--brd);
+      border-radius:20px;overflow:hidden}
+    .si{background:var(--bg2);padding:48px 32px;text-align:center}
+    .sv{font-size:clamp(2.5rem,5vw,3.5rem);font-weight:700;letter-spacing:-.05em;
+      background:linear-gradient(135deg,var(--txt),var(--txt2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .sl{font-size:14px;color:var(--txt3);margin-top:8px}
+
+    /* HOW */
+    .how-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-top:80px}
+    .how-steps{display:flex;flex-direction:column}
+    .how-step{display:flex;gap:20px;padding:28px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:opacity .2s}
+    .how-step:last-child{border-bottom:none}
+    .how-step:hover{opacity:.85}
+    .sn{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:var(--surf);
+      border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:600;color:var(--txt2)}
+    .sn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .st{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-.02em}
+    .sd{font-size:14px;color:var(--txt2);line-height:1.6}
+    .how-vis{background:var(--bgc);border-radius:20px;border:1px solid var(--brd);
+      overflow:hidden;box-shadow:var(--shadowl)}
+    .hv-h{background:var(--bg3);padding:14px 20px;display:flex;align-items:center;gap:8px;
+      border-bottom:1px solid var(--brd);font-size:13px;color:var(--txt3)}
+    .hv-b{padding:24px}
+    .cc{background:var(--bg3);border-radius:14px;padding:20px;border:1px solid var(--brd);margin-bottom:16px}
+    .cc-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+    .cc-av{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));
+      display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+    .cc-name{font-size:16px;font-weight:600}
+    .cc-spec{font-size:13px;color:var(--txt2)}
+    .cc-act{display:flex;gap:10px}
+    .btn-vid{flex:1;background:var(--green);color:#000;padding:10px;border-radius:10px;
+      font-size:14px;font-weight:600;transition:transform .15s,box-shadow .15s;
+      display:flex;align-items:center;justify-content:center;gap:6px}
+    .btn-vid:hover{transform:scale(1.02);box-shadow:0 0 20px rgba(48,209,88,.3)}
+    .btn-aud{background:var(--surf);color:var(--txt2);border:1px solid var(--brd);
+      padding:10px 16px;border-radius:10px;font-size:14px;transition:background .2s}
+    .btn-aud:hover{background:var(--surfh)}
+    .sig{display:flex;align-items:flex-end;gap:3px}
+    .bar{width:4px;border-radius:2px;background:var(--green)}
+
+    /* TESTI */
+    .tg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px}
+    .tc{background:var(--bgc);border-radius:18px;padding:28px;border:1px solid var(--brd);
+      transition:border-color .3s,transform .3s var(--ease),box-shadow .3s}
+    .tc:hover{border-color:var(--brdh);transform:translateY(-4px) scale(1.01);box-shadow:var(--shadow)}
+    .t-stars{color:var(--orange);font-size:14px;margin-bottom:14px;letter-spacing:2px}
+    .t-txt{font-size:14px;color:var(--txt2);line-height:1.7;margin-bottom:20px}
+    .t-auth{display:flex;align-items:center;gap:12px}
+    .t-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:700;color:#fff}
+    .t-name{font-size:14px;font-weight:600}
+    .t-role{font-size:12px;color:var(--txt3)}
+
+    /* PRICING */
+    .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px}
+    .pc{background:var(--bgc);border-radius:20px;padding:36px 28px;border:1px solid var(--brd);
+      position:relative;overflow:hidden;transition:border-color .3s,transform .3s var(--ease)}
+    .pc:hover{border-color:var(--brdh);transform:translateY(-4px)}
+    .pc.feat{border-color:var(--blue)}
+    .pc.feat::before{content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(41,151,255,.06),transparent);pointer-events:none}
+    .feat-b{position:absolute;top:20px;right:20px;background:var(--blue);color:#fff;
+      font-size:11px;font-weight:600;padding:4px 12px;border-radius:980px}
+    .pp{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);margin-bottom:16px}
+    .pv{font-size:clamp(2.5rem,5vw,3.5rem);font-weight:700;letter-spacing:-.05em;margin-bottom:6px}
+    .pv .cur{font-size:1.5rem;vertical-align:super}
+    .per{font-size:14px;color:var(--txt3);margin-bottom:28px}
+    .pfl{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+    .pfl li{font-size:14px;color:var(--txt2);display:flex;align-items:center;gap:10px}
+    .pfl li::before{content:"\2713";color:var(--green);font-weight:700;flex-shrink:0}
+    .btn-pp{width:100%;background:var(--blue);color:#fff;padding:14px;border-radius:12px;
+      font-size:15px;font-weight:500;transition:background .2s,transform .15s}
+    .btn-pp:hover{background:var(--blueh);transform:scale(1.01)}
+    .btn-pg{width:100%;background:var(--surf);color:var(--txt);border:1px solid var(--brd);
+      padding:14px;border-radius:12px;font-size:15px;font-weight:500;transition:background .2s}
+    .btn-pg:hover{background:var(--surfh)}
+
+    /* FAQ */
+    .faq-list{margin-top:64px;display:flex;flex-direction:column;gap:1px;
+      background:var(--brd);border-radius:16px;overflow:hidden}
+    .faq-item{background:var(--bg2)}
+    .faq-q{width:100%;text-align:left;background:none;color:var(--txt);padding:22px 28px;
+      font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:16px;
+      cursor:pointer;transition:background .2s}
+    .faq-q:hover{background:var(--surf)}
+    .faq-arr{font-size:18px;color:var(--txt3);transition:transform .3s var(--ease);flex-shrink:0}
+    .faq-item.open .faq-arr{transform:rotate(180deg)}
+    .faq-a{max-height:0;overflow:hidden;transition:max-height .4s var(--ease)}
+    .faq-ai{padding:0 28px 22px;font-size:15px;color:var(--txt2);line-height:1.7}
+
+    /* CTA */
+    .cta-sec{padding:120px 0;text-align:center;position:relative}
+    .cta-sec::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+      width:800px;height:400px;
+      background:radial-gradient(ellipse at bottom,rgba(41,151,255,.08),transparent 70%);pointer-events:none}
+    .cta-sec h2{font-size:clamp(2rem,5vw,3.8rem);font-weight:700;letter-spacing:-.04em;line-height:1.1;margin-bottom:20px}
+    .cta-sec p{font-size:1.1rem;color:var(--txt2);margin-bottom:40px;max-width:480px;margin-left:auto;margin-right:auto}
+    .cta-form{display:flex;gap:12px;max-width:440px;margin:0 auto}
+    .cta-in{flex:1;background:var(--bgc);border:1px solid var(--brd);color:var(--txt);
+      font-size:15px;padding:14px 18px;border-radius:12px;outline:none;transition:border-color .2s;
+      font-family:var(--font)}
+    .cta-in:focus{border-color:var(--blue)}
+    .cta-in::placeholder{color:var(--txt3)}
+    .cta-sub{background:var(--blue);color:#fff;padding:14px 22px;border-radius:12px;
+      font-size:15px;font-weight:500;white-space:nowrap;transition:background .2s,transform .15s}
+    .cta-sub:hover{background:var(--blueh);transform:scale(1.02)}
+    .cta-note{font-size:13px;color:var(--txt3);margin-top:14px}
+
+    /* FOOTER */
+    footer{border-top:1px solid var(--brd);padding:60px 0 40px}
+    .fg{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+    .f-logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;margin-bottom:16px}
+    .f-tag{font-size:14px;color:var(--txt3);line-height:1.6;max-width:280px;margin-bottom:20px}
+    .f-soc{display:flex;gap:12px}
+    .sb{width:36px;height:36px;border-radius:10px;background:var(--surf);border:1px solid var(--brd);
+      display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--txt2);
+      transition:background .2s,color .2s}
+    .sb:hover{background:var(--surfh);color:var(--txt)}
+    .f-col-t{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:16px;
+      text-transform:uppercase;letter-spacing:.06em}
+    .f-links{display:flex;flex-direction:column;gap:10px}
+    .f-links a{font-size:14px;color:var(--txt3);transition:color .2s}
+    .f-links a:hover{color:var(--txt)}
+    .f-bot{border-top:1px solid var(--brd);padding-top:28px;
+      display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--txt3)}
+    .f-badges{display:flex;gap:12px}
+    .bdg{background:var(--surf);border:1px solid var(--brd);padding:4px 12px;border-radius:980px;font-size:11px;color:var(--txt3)}
+
+    /* REVEAL */
+    .rv{opacity:0;transform:translateY(32px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+    .rv.vis{opacity:1;transform:translateY(0)}
+    .rv:nth-child(2){transition-delay:.08s}
+    .rv:nth-child(3){transition-delay:.16s}
+    .rv:nth-child(4){transition-delay:.24s}
+    .rv:nth-child(5){transition-delay:.32s}
+    .rv:nth-child(6){transition-delay:.40s}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);
+      background:var(--bgc);border:1px solid var(--green);color:var(--txt);
+      padding:14px 24px;border-radius:12px;font-size:14px;z-index:9999;
+      transition:transform .4s var(--ease);
+      box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 20px rgba(48,209,88,.15)}
+    .toast.show{transform:translateX(-50%) translateY(0)}
+
+    @media(max-width:900px){
+      .feat-grid,.tg,.pg{grid-template-columns:repeat(2,1fr)}
+      .stats-g{grid-template-columns:repeat(2,1fr)}
+      .how-grid{grid-template-columns:1fr;gap:48px}
+      .fg{grid-template-columns:1fr 1fr}
+      .mock-body{grid-template-columns:1fr}
+      .mock-sb{display:none}
+      .mock-cards{grid-template-columns:repeat(2,1fr)}
+      .nav-links{display:none}
+    }
+    @media(max-width:600px){
+      .feat-grid,.tg,.pg{grid-template-columns:1fr}
+      .fg{grid-template-columns:1fr}
+      .cta-form{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="con">
+    <a href="#" class="nav-logo">
+      <div class="nav-dot">&#x1F33F;</div>
+      OpenHealthPlat
+    </a>
+    <div class="nav-links">
+      <a href="#features">Fonctionnalites</a>
+      <a href="#how">Comment ca marche</a>
+      <a href="#pricing">Acces gratuit</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="#beta" class="nav-cta">Rejoindre la beta</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="con">
+    <div class="badge"><span class="badge-dot"></span> Open source &middot; RGPD &middot; HDS &middot; Gratuit pour toujours</div>
+    <h1 class="hero-title">La sante numerique<br><span class="acc-g">accessible a tous.</span><br><span class="acc-b">Partout.</span></h1>
+    <p class="hero-sub">Dossier medical personnel, teleconsultation, prise de rendez-vous. Gratuit pour les patients et professionnels de sante. Fonctionne hors ligne.</p>
+    <div class="ctas">
+      <a href="#beta" class="btn-p">&#x1F680; Rejoindre la beta gratuite</a>
+      <a href="https://github.com/openhealthplat" target="_blank" class="btn-g">&#x2B50; Voir sur GitHub</a>
+    </div>
+    <div class="mockup">
+      <div class="mock-bar">
+        <div class="dr"></div><div class="dy"></div><div class="dg"></div>
+        <div class="mock-url">app.openhealthplat.org &mdash; Tableau de bord</div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-sb">
+          <div style="font-size:11px;color:var(--txt3);padding:8px 12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Menu</div>
+          <div class="mni active"><span class="mni-ico">&#x1F3E0;</span> Tableau de bord</div>
+          <div class="mni"><span class="mni-ico">&#x1F4CB;</span> Mon Dossier</div>
+          <div class="mni"><span class="mni-ico">&#x1F4C5;</span> Rendez-vous</div>
+          <div class="mni"><span class="mni-ico">&#x1F4F9;</span> Teleconsultation</div>
+          <div class="mni"><span class="mni-ico">&#x1F48A;</span> Medicaments</div>
+          <div class="mni"><span class="mni-ico">&#x1F4AC;</span> Messages</div>
+          <div class="mni"><span class="mni-ico">&#x1F4CA;</span> Suivi sante</div>
+        </div>
+        <div class="mock-main">
+          <div class="mock-hr">
+            <div class="mock-t">Bonjour, Marie &#x1F44B;</div>
+            <div class="badge-g">&#x25CF; Connecte</div>
+          </div>
+          <div class="mock-cards">
+            <div class="mc"><div class="mc-lbl">Prochains RDV</div><div class="mc-val acc-b">3</div></div>
+            <div class="mc"><div class="mc-lbl">Glycemie (mmol)</div><div class="mc-val acc-g">5.4</div></div>
+            <div class="mc"><div class="mc-lbl">Tension (mmHg)</div><div class="mc-val" style="color:var(--orange)">120/80</div></div>
+          </div>
+          <div class="mock-list">
+            <div class="ml-h">Prochains rendez-vous</div>
+            <div class="ml-i">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av" style="background:linear-gradient(135deg,#2997ff,#30d158)">Dr</div>
+                <div><div style="font-size:13px;font-weight:500">Dr. Kamdem &mdash; Generaliste</div><div style="font-size:11px;color:var(--txt3)">Demain 10h00 &middot; Teleconsultation</div></div>
+              </div>
+              <span class="pill pill-b">Video</span>
+            </div>
+            <div class="ml-i">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av" style="background:linear-gradient(135deg,#ff9f0a,#ff453a)">Dr</div>
+                <div><div style="font-size:13px;font-weight:500">Dr. Moreau &mdash; Cardiologue</div><div style="font-size:11px;color:var(--txt3)">Vendredi 14h30 &middot; Cabinet Paris 15e</div></div>
+              </div>
+              <span class="pill pill-o">Presentiel</span>
+            </div>
+            <div class="ml-i">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av" style="background:linear-gradient(135deg,#30d158,#64d2ff)">In</div>
+                <div><div style="font-size:13px;font-weight:500">Infirmiere Adjoua</div><div style="font-size:11px;color:var(--txt3)">Lundi 08h00 &middot; Prise de sang</div></div>
+              </div>
+              <span class="pill pill-g">Confirme</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="logos">
+  <div class="con">
+    <div class="logos-lbl">Compatible et inspire de</div>
+    <div class="logos-row">
+      <div class="li-item">&#x1F3E5; HL7 FHIR R4</div>
+      <div class="li-item">&#x1F512; HDS France</div>
+      <div class="li-item">&#x1F30D; OpenMRS</div>
+      <div class="li-item">&#x1F4CA; DHIS2</div>
+      <div class="li-item">&#x1F4F9; Jitsi Meet</div>
+      <div class="li-item">&#x26A1; Oracle Free Tier</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="features">
+  <div class="con">
+    <div class="rv">
+      <div class="eyebrow">Fonctionnalites</div>
+      <h2 class="sec-title">Tout ce dont vous avez besoin.<br>Sans payer un centime.</h2>
+      <p class="sec-sub">Chaque fonctionnalite est pensee pour fonctionner aussi bien a Paris que sur un reseau 2G a Yaounde.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="fc rv"><div class="fi fi-g">&#x1F4CB;</div><div class="fc-title">Dossier Medical Personnel</div><p class="fc-desc">Antecedents, traitements, allergies, resultats. Exportable en PDF ou FHIR R4. Accessible meme hors connexion.</p></div>
+      <div class="fc rv"><div class="fi fi-b">&#x1F4F9;</div><div class="fc-title">Teleconsultation WebRTC</div><p class="fc-desc">Video HD ou mode audio seul pour les connexions lentes. Chiffrement E2EE via Jitsi. Salle d'attente virtuelle incluse.</p></div>
+      <div class="fc rv"><div class="fi fi-o">&#x1F4C5;</div><div class="fc-title">Prise de rendez-vous</div><p class="fc-desc">Calendrier medecin, creneaux en temps reel, confirmation par SMS ou email, rappels 24h avant.</p></div>
+      <div class="fc rv"><div class="fi fi-p">&#x1F4AC;</div><div class="fc-title">Messagerie chiffree</div><p class="fc-desc">Communication securisee patient-medecin avec protocole Signal. Pieces jointes, indicateur de lecture.</p></div>
+      <div class="fc rv"><div class="fi fi-r">&#x1F48A;</div><div class="fc-title">Suivi maladies chroniques</div><p class="fc-desc">Tableaux de bord diabete, hypertension, VIH. Courbes glycemie et tension, alertes parametrables.</p></div>
+      <div class="fc rv"><div class="fi fi-t">&#x1F30D;</div><div class="fc-title">Mode hors ligne et SMS</div><p class="fc-desc">Synchronisation offline-first via CouchDB/PouchDB. Canal USSD pour telephones basiques.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="con">
+    <div class="stats-g">
+      <div class="si rv"><div class="sv">100%</div><div class="sl">Gratuit pour toujours</div></div>
+      <div class="si rv"><div class="sv">0 &euro;</div><div class="sl">Zero abonnement cache</div></div>
+      <div class="si rv"><div class="sv">+50</div><div class="sl">Langues supportees</div></div>
+      <div class="si rv"><div class="sv">2G</div><div class="sl">Fonctionne sur reseau 2G</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="how" style="padding-bottom:60px">
+  <div class="con">
+    <div class="rv">
+      <div class="eyebrow">Comment ca marche</div>
+      <h2 class="sec-title">Simple pour le patient.<br>Puissant pour le medecin.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-steps rv">
+        <div class="how-step" onclick="activateStep(0)">
+          <div class="sn active" id="sn0">1</div>
+          <div><div class="st">Creez votre compte en 30 secondes</div><p class="sd">Inscription avec email ou telephone. Aucune carte bancaire demandee. Jamais.</p></div>
+        </div>
+        <div class="how-step" onclick="activateStep(1)">
+          <div class="sn" id="sn1">2</div>
+          <div><div class="st">Completez votre dossier medical</div><p class="sd">Ajoutez vos antecedents, medicaments et allergies. Importez vos documents existants.</p></div>
+        </div>
+        <div class="how-step" onclick="activateStep(2)">
+          <div class="sn" id="sn2">3</div>
+          <div><div class="st">Trouvez un medecin et prenez RDV</div><p class="sd">Recherchez par specialite ou disponibilite. Reservez en quelques clics.</p></div>
+        </div>
+        <div class="how-step" onclick="activateStep(3)">
+          <div class="sn" id="sn3">4</div>
+          <div><div class="st">Consultez ou que vous soyez</div><p class="sd">Video HD en ville, audio seul en zone rurale, SMS si pas d'Internet.</p></div>
+        </div>
+      </div>
+      <div class="how-vis rv">
+        <div class="hv-h">
+          <span>&#x1F4F9;</span> Teleconsultation en cours
+          <div class="sig" style="margin-left:auto">
+            <div class="bar" style="height:8px;opacity:.4"></div>
+            <div class="bar" style="height:12px;opacity:.6"></div>
+            <div class="bar" style="height:16px;opacity:.8"></div>
+            <div class="bar" style="height:20px"></div>
+          </div>
+        </div>
+        <div class="hv-b">
+          <div class="cc">
+            <div class="cc-row">
+              <div class="cc-av">DK</div>
+              <div><div class="cc-name">Dr. Kamdem Patrick</div><div class="cc-spec">Medecin generaliste &middot; Yaounde</div></div>
+              <div class="badge-g" style="margin-left:auto">&#x25CF; En ligne</div>
+            </div>
+            <div class="cc-act">
+              <button class="btn-vid">&#x1F4F9; Demarrer la video</button>
+              <button class="btn-aud">&#x1F3A4; Audio seul</button>
+            </div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:16px;border:1px solid var(--brd)">
+            <div style="font-size:12px;color:var(--txt3);margin-bottom:10px">Resume du dossier partage</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--txt2)">Derniere consultation</span><span>15 mars 2026</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--txt2)">Traitements en cours</span><span class="pill pill-g">2 actifs</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--txt2)">Allergies connues</span><span style="color:var(--orange)">Penicilline</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:60px">
+  <div class="con">
+    <div class="rv" style="text-align:center">
+      <div class="eyebrow">Temoignages</div>
+      <h2 class="sec-title">Ils font confiance a OpenHealthPlat</h2>
+    </div>
+    <div class="tg">
+      <div class="tc rv">
+        <div class="t-stars">&#x2605;&#x2605;&#x2605;&#x2605;&#x2605;</div>
+        <p class="t-txt">Enfin une solution qui fonctionne dans mon village, meme sans connexion stable. Je peux consulter le dossier de mes patients hors ligne et synchroniser le soir.</p>
+        <div class="t-auth"><div class="t-av" style="background:linear-gradient(135deg,#30d158,#2997ff)">AK</div><div><div class="t-name">Adjoua Kone</div><div class="t-role">Infirmiere, Abidjan rural, Cote d'Ivoire</div></div></div>
+      </div>
+      <div class="tc rv">
+        <div class="t-stars">&#x2605;&#x2605;&#x2605;&#x2605;&#x2605;</div>
+        <p class="t-txt">J'ai pu deployer OpenHealthPlat dans mon cabinet en une journee. La conformite HDS et RGPD est clairement documentee. C'est le Doctolib open source qu'on attendait.</p>
+        <div class="t-auth"><div class="t-av" style="background:linear-gradient(135deg,#2997ff,#bf5af2)">PM</div><div><div class="t-name">Dr. Pierre Moreau</div><div class="t-role">Generaliste, MSP Lyon, France</div></div></div>
+      </div>
+      <div class="tc rv">
+        <div class="t-stars">&#x2605;&#x2605;&#x2605;&#x2605;&#x2605;</div>
+        <p class="t-txt">La teleconsultation audio-seul a change la vie de nos patients a 80 km du medecin le plus proche. OpenHealthPlat est exactement ce que la sante rurale attendait.</p>
+        <div class="t-auth"><div class="t-av" style="background:linear-gradient(135deg,#ff9f0a,#ff453a)">SF</div><div><div class="t-name">Sonia Fofana</div><div class="t-role">Coordinatrice sante, ONG MedAfrica</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="pricing" style="padding-bottom:60px">
+  <div class="con">
+    <div class="rv" style="text-align:center">
+      <div class="eyebrow">Acces</div>
+      <h2 class="sec-title">Gratuit. Vraiment.</h2>
+      <p class="sec-sub" style="margin:0 auto">Aucun piege, aucun freemium, aucune revente de donnees. Vous etes un humain, pas un produit.</p>
+    </div>
+    <div class="pg">
+      <div class="pc rv">
+        <div class="pp">Patient</div>
+        <div class="pv"><span class="cur">&euro;</span>0</div>
+        <div class="per">Pour toujours</div>
+        <ul class="pfl">
+          <li>Dossier medical complet</li>
+          <li>Prise de rendez-vous</li>
+          <li>Teleconsultation audio/video</li>
+          <li>Messagerie securisee</li>
+          <li>Mode hors ligne</li>
+          <li>Export PDF et FHIR</li>
+        </ul>
+        <button class="btn-pg" onclick="showToast()">Creer mon compte</button>
+      </div>
+      <div class="pc feat rv">
+        <div class="feat-b">Recommande</div>
+        <div class="pp">Professionnel de sante</div>
+        <div class="pv"><span class="cur">&euro;</span>0</div>
+        <div class="per">Pour toujours</div>
+        <ul class="pfl">
+          <li>Agenda + gestion patients</li>
+          <li>Teleconsultation HD illimitee</li>
+          <li>Prescriptions numeriques QR</li>
+          <li>Suivi chroniques avance</li>
+          <li>API FHIR et integration SIH</li>
+          <li>Support communaute prioritaire</li>
+        </ul>
+        <button class="btn-pp" onclick="showToast()">Acces professionnel gratuit</button>
+      </div>
+      <div class="pc rv">
+        <div class="pp">Hopital / ONG</div>
+        <div class="pv"><span class="cur">&euro;</span>0</div>
+        <div class="per">Auto-heberge</div>
+        <ul class="pfl">
+          <li>Code source 100% open source</li>
+          <li>Deploiement Raspberry Pi ou cloud</li>
+          <li>Multi-etablissements</li>
+          <li>Surveillance epidemiologique</li>
+          <li>Formation et documentation</li>
+          <li>Support communaute GitHub</li>
+        </ul>
+        <button class="btn-pg" onclick="window.open('https://github.com/openhealthplat','_blank')">Deployer soi-meme</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="faq" style="padding-top:60px">
+  <div class="con-n">
+    <div class="rv" style="text-align:center">
+      <div class="eyebrow">FAQ</div>
+      <h2 class="sec-title">Questions frequentes</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Comment est-ce vraiment gratuit ? <span class="faq-arr">&#x25BE;</span></button>
+        <div class="faq-a"><div class="faq-ai">OpenHealthPlat est finance par des subventions de fondations internationales (Gates Foundation, Wellcome Trust), des partenariats ONG, et des services optionnels B2B (tableaux de bord analytiques anonymises). Les patients et professionnels ne paient jamais rien, et leurs donnees ne sont jamais vendues.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">La plateforme est-elle conforme RGPD et HDS ? <span class="faq-arr">&#x25BE;</span></button>
+        <div class="faq-a"><div class="faq-ai">Oui. Pour la France, l'hebergement est certifie HDS. Les donnees sont chiffrees AES-256 au repos et TLS 1.3 en transit. Un DPO est designe et un registre des traitements est tenu a jour. Exercez vos droits a tout moment via rgpd@openhealthplat.org.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Ca fonctionne vraiment sans Internet ? <span class="faq-arr">&#x25BE;</span></button>
+        <div class="faq-a"><div class="faq-ai">Oui, grace a une architecture offline-first (CouchDB/PouchDB). Donnees stockees localement, synchronisation delta au retour de la connexion. Canal USSD disponible dans les pays partenaires pour les telephones basiques.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Puis-je deployer OpenHealthPlat dans mon hopital ? <span class="faq-arr">&#x25BE;</span></button>
+        <div class="faq-a"><div class="faq-ai">Absolument. Code source entierement open source (licence AGPL v3). Deploiement sur Raspberry Pi 4, Oracle Free Tier ou votre propre infrastructure. Documentation complete, scripts Ansible et guide pas-a-pas sur GitHub.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Quelles langues sont supportees ? <span class="faq-arr">&#x25BE;</span></button>
+        <div class="faq-a"><div class="faq-ai">Francais, anglais, arabe, bambara, swahili et portugais au lancement. Fiches education sante avec versions audio pour les populations a faible niveau de litteratie. Contributions via Weblate sur GitHub.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-sec" id="beta">
+  <div class="con">
+    <h2 class="rv">Rejoignez la beta.<br><span style="color:var(--green)">Gratuitement.</span></h2>
+    <p class="rv">Soyez parmi les premiers professionnels et patients a tester OpenHealthPlat. Votre retour construit la plateforme.</p>
+    <form class="cta-form rv" onsubmit="handleSubmit(event)">
+      <input type="email" class="cta-in" placeholder="votre@email.com" required />
+      <button type="submit" class="cta-sub">S'inscrire &rarr;</button>
+    </form>
+    <p class="cta-note rv">Pas de spam. Pas de revente. Desinscription a tout moment.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="con">
+    <div class="fg">
+      <div>
+        <div class="f-logo"><div class="nav-dot">&#x1F33F;</div> OpenHealthPlat</div>
+        <p class="f-tag">Plateforme de sante numerique open source, 100% gratuite pour les patients et professionnels de sante du monde entier.</p>
+        <div class="f-soc">
+          <a href="https://github.com/openhealthplat" target="_blank" class="sb">&#x1F419;</a>
+          <a href="#" class="sb">&#x1F426;</a>
+          <a href="#" class="sb">&#x1F4BC;</a>
+          <a href="#" class="sb">&#x1F4AC;</a>
+        </div>
+      </div>
+      <div>
+        <div class="f-col-t">Produit</div>
+        <div class="f-links">
+          <a href="#features">Fonctionnalites</a>
+          <a href="#how">Comment ca marche</a>
+          <a href="#pricing">Acces gratuit</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+      <div>
+        <div class="f-col-t">Communaute</div>
+        <div class="f-links">
+          <a href="https://github.com/openhealthplat" target="_blank">GitHub</a>
+          <a href="#">Forum</a>
+          <a href="#">Documentation</a>
+          <a href="#">Contribuer</a>
+        </div>
+      </div>
+      <div>
+        <div class="f-col-t">Legal</div>
+        <div class="f-links">
+          <a href="#">Mentions legales</a>
+          <a href="#">Confidentialite</a>
+          <a href="#">RGPD</a>
+          <a href="#">Licence AGPL v3</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>&copy; 2026 Association OpenHealthPlat &middot; Licence AGPL v3 &middot; Open Source</span>
+      <div class="f-badges">
+        <span class="bdg">&#x1F512; RGPD</span>
+        <span class="bdg">&#x1F3E5; HDS</span>
+        <span class="bdg">&#x267F; WCAG 2.1</span>
+        <span class="bdg">&#x2B50; Open Source</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">&#x2705; Inscription enregistree ! Email de confirmation en route.</div>
+
+<script>
+const obs = new IntersectionObserver(
+  e => e.forEach(x => x.isIntersecting && x.target.classList.add("vis")),
+  {threshold:.12}
+);
+document.querySelectorAll(".rv").forEach(el => obs.observe(el));
+
+let ls = 0;
+window.addEventListener("scroll", () => {
+  const nav = document.getElementById("navbar");
+  const c = window.scrollY;
+  nav.style.transform = (c > ls && c > 100) ? "translateY(-100%)" : "translateY(0)";
+  ls = c;
+});
+
+function toggleFaq(btn) {
+  const item = btn.closest(".faq-item");
+  const ans = item.querySelector(".faq-a");
+  const open = item.classList.contains("open");
+  document.querySelectorAll(".faq-item").forEach(i => {
+    i.classList.remove("open");
+    i.querySelector(".faq-a").style.maxHeight = "0";
+  });
+  if (!open) { item.classList.add("open"); ans.style.maxHeight = ans.scrollHeight + "px"; }
+}
+
+function activateStep(idx) {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById("sn" + i).classList.toggle("active", i === idx);
+  }
+}
+
+function handleSubmit(e) { e.preventDefault(); showToast(); e.target.reset(); }
+
+function showToast() {
+  const t = document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 4000);
+}
+</script>
+</body>
+</html>
