@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer un compte — OpenHealthPlat</title>
+<style>
+  :root {
+    --bg: #000;
+    --bg2: #1d1d1f;
+    --border: rgba(255,255,255,0.1);
+    --text: #f5f5f7;
+    --text2: #a1a1a6;
+    --blue: #2997ff;
+    --green: #30d158;
+    --red: #ff453a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 40px;
+    letter-spacing: -0.02em;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--text2);
+    font-size: 15px;
+    margin-bottom: 32px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  input, select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--blue); }
+  select option { background: #1d1d1f; }
+  .btn {
+    width: 100%;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 980px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn:hover { background: #0077ed; transform: scale(1.01); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .error {
+    background: rgba(255,69,58,0.1);
+    border: 1px solid rgba(255,69,58,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--red);
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .success {
+    background: rgba(48,209,88,0.1);
+    border: 1px solid rgba(48,209,88,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--green);
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .footer-link {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+  .footer-link a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="logo">🌿 OpenHealthPlat</div>
+<div class="card">
+  <h1>Créer un compte</h1>
+  <p class="subtitle">Gratuit pour toujours. Aucune carte bancaire.</p>
+
+  <div class="error" id="error"></div>
+  <div class="success" id="success"></div>
+
+  <form id="registerForm">
+    <div class="form-group">
+      <label>Nom complet</label>
+      <input type="text" id="fullName" placeholder="Marie Dupont" required>
+    </div>
+    <div class="form-group">
+      <label>Adresse e-mail</label>
+      <input type="email" id="email" placeholder="marie@exemple.com" required>
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" id="password" placeholder="Minimum 8 caractères" required minlength="8">
+    </div>
+    <div class="form-group">
+      <label>Je suis</label>
+      <select id="role">
+        <option value="patient">Patient</option>
+        <option value="medecin">Médecin / Professionnel de santé</option>
+        <option value="infirmier">Infirmier(ère)</option>
+        <option value="ong">ONG / Organisation de santé</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Téléphone (optionnel)</label>
+      <input type="tel" id="phone" placeholder="+33 6 00 00 00 00">
+    </div>
+    <button type="submit" class="btn" id="submitBtn">Créer mon compte →</button>
+  </form>
+
+  <div class="footer-link">
+    Déjà inscrit ? <a href="login.html">Se connecter</a>
+  </div>
+</div>
+
+<script>
+const API = 'https://openhealthplat-site.onrender.com';
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('error');
+  const okEl = document.getElementById('success');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Création en cours...';
+
+  const body = {
+    full_name: document.getElementById('fullName').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    role: document.getElementById('role').value,
+    phone: document.getElementById('phone').value || null,
+  };
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erreur lors de l\'inscription');
+
+    localStorage.setItem('ohp_token', data.token);
+    localStorage.setItem('ohp_user', JSON.stringify(data.user));
+    okEl.textContent = '✅ Compte créé ! Redirection...';
+    okEl.style.display = 'block';
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+  } catch (err) {
+    errEl.textContent = '❌ ' + err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Créer mon compte →';
+  }
+});
+</script>
+</body>
+</html>

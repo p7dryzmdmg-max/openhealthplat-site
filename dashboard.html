@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — OpenHealthPlat</title>
+<style>
+  :root{--bg:#000;--bg2:#1d1d1f;--bg3:#2d2d2f;--border:rgba(255,255,255,0.08);--text:#f5f5f7;--text2:#a1a1a6;--blue:#2997ff;--green:#30d158;--orange:#ff9f0a;--red:#ff453a;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',sans-serif;min-height:100vh;}
+  nav{position:fixed;top:0;width:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100;}
+  .nav-logo{font-size:16px;font-weight:600;color:var(--green);}
+  .nav-user{font-size:14px;color:var(--text2);display:flex;align-items:center;gap:12px;}
+  .logout-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:980px;font-size:13px;cursor:pointer;transition:border-color 0.2s;}
+  .logout-btn:hover{border-color:var(--red);color:var(--red);}
+  main{padding-top:72px;padding-bottom:48px;max-width:900px;margin:0 auto;padding-left:24px;padding-right:24px;}
+  .welcome{margin-bottom:32px;}
+  .welcome h1{font-size:28px;font-weight:600;letter-spacing:-0.03em;}
+  .welcome p{color:var(--text2);font-size:15px;margin-top:4px;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:32px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px;transition:transform 0.2s,box-shadow 0.2s;}
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+  .card-icon{font-size:28px;margin-bottom:12px;}
+  .card-title{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .card-desc{font-size:14px;color:var(--text2);line-height:1.5;}
+  .card-badge{display:inline-block;background:rgba(48,209,88,0.15);color:var(--green);font-size:11px;padding:3px 8px;border-radius:980px;margin-top:8px;font-weight:500;}
+  .profile-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px;}
+  .profile-card h2{font-size:18px;font-weight:600;margin-bottom:20px;}
+  .field{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+  .field:last-child{border-bottom:none;}
+  .field-label{font-size:14px;color:var(--text2);}
+  .field-value{font-size:14px;font-weight:500;}
+  .role-badge{background:rgba(41,151,255,0.15);color:var(--blue);font-size:12px;padding:4px 10px;border-radius:980px;font-weight:500;}
+  .loading{text-align:center;color:var(--text2);padding:60px;font-size:16px;}
+  .coming-soon{opacity:0.5;cursor:default !important;}
+  .coming-soon:hover{transform:none !important;box-shadow:none !important;}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">🌿 OpenHealthPlat</div>
+  <div class="nav-user">
+    <span id="navName">Chargement...</span>
+    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+  </div>
+</nav>
+
+<main>
+  <div id="loadingEl" class="loading">⏳ Chargement de votre espace...</div>
+  <div id="content" style="display:none">
+    <div class="welcome">
+      <h1>Bonjour, <span id="firstName"></span> 👋</h1>
+      <p id="roleText"></p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Mon Dossier Médical</div>
+        <div class="card-desc">Consultez et mettez à jour vos informations médicales, antécédents et traitements.</div>
+        <div class="card-badge">✓ Disponible</div>
+      </div>
+      <div class="card coming-soon">
+        <div class="card-icon">📅</div>
+        <div class="card-title">Rendez-vous</div>
+        <div class="card-desc">Prenez rendez-vous avec un professionnel de santé.</div>
+        <div class="card-badge" style="background:rgba(255,159,10,0.15);color:var(--orange)">🔜 Bientôt</div>
+      </div>
+      <div class="card coming-soon">
+        <div class="card-icon">📹</div>
+        <div class="card-title">Téléconsultation</div>
+        <div class="card-desc">Consultez un médecin par vidéo, audio ou chat sécurisé.</div>
+        <div class="card-badge" style="background:rgba(255,159,10,0.15);color:var(--orange)">🔜 Bientôt</div>
+      </div>
+      <div class="card coming-soon">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Messagerie</div>
+        <div class="card-desc">Communiquez de façon sécurisée avec vos professionnels de santé.</div>
+        <div class="card-badge" style="background:rgba(255,159,10,0.15);color:var(--orange)">🔜 Bientôt</div>
+      </div>
+    </div>
+
+    <div class="profile-card">
+      <h2>Mon profil</h2>
+      <div class="field">
+        <span class="field-label">Nom complet</span>
+        <span class="field-value" id="pName">—</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Email</span>
+        <span class="field-value" id="pEmail">—</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Rôle</span>
+        <span class="field-value"><span class="role-badge" id="pRole">—</span></span>
+      </div>
+      <div class="field">
+        <span class="field-label">Membre depuis</span>
+        <span class="field-value" id="pDate">—</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const API = 'https://openhealthplat-site.onrender.com';
+
+async function loadDashboard() {
+  const token = localStorage.getItem('ohp_token');
+  if (!token) { window.location.href = 'login.html'; return; }
+
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
+    const user = await res.json();
+
+    document.getElementById('navName').textContent = user.full_name;
+    document.getElementById('firstName').textContent = user.full_name.split(' ')[0];
+    document.getElementById('roleText').textContent = 'Votre espace ' + (user.role === 'patient' ? 'patient' : 'professionnel de santé');
+    document.getElementById('pName').textContent = user.full_name;
+    document.getElementById('pEmail').textContent = user.email;
+    document.getElementById('pRole').textContent = user.role;
+    document.getElementById('pDate').textContent = new Date(user.created_at).toLocaleDateString('fr-FR', {year:'numeric',month:'long',day:'numeric'});
+
+    document.getElementById('loadingEl').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loadingEl').textContent = '❌ Erreur de connexion. Vérifiez votre connexion internet.';
+  }
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
