@@ -179,3 +179,38 @@ def users_count():
         return {"count": 0}
     result = supabase.table("users").select("id", count="exact").execute()
     return {"count": result.count or 0}
+
+# ── Modèle Dossier Médical ────────────────────────────────────────────────────
+class MedicalRecord(BaseModel):
+    blood_type: Optional[str] = None
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    current_treatments: Optional[str] = None
+    family_history: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
+# ── Routes Dossier Médical ────────────────────────────────────────────────────
+@app.get("/medical/record")
+def get_medical_record(user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("medical_records").select("*").eq("user_id", user_id).execute()
+    if not result.data:
+        return {}
+    return result.data[0]
+
+@app.put("/medical/record")
+def save_medical_record(record: MedicalRecord, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    
+    data = {**record.dict(), "user_id": user_id, "updated_at": datetime.utcnow().isoformat()}
+    
+    existing = supabase.table("medical_records").select("id").eq("user_id", user_id).execute()
+    if existing.data:
+        result = supabase.table("medical_records").update(data).eq("user_id", user_id).execute()
+    else:
+        result = supabase.table("medical_records").insert(data).execute()
+    
+    return {"message": "Dossier médical enregistré", "data": result.data[0] if result.data else {}}
