@@ -9,12 +9,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime, timedelta
-import hashlib, secrets, json, os
+import hashlib, secrets, os
+from supabase import create_client, Client
 
 app = FastAPI(
     title="OpenHealthPlat API",
     description="Plateforme de santé numérique open source — API REST FHIR-compatible",
-    version="0.1.0-mvp",
+    version="0.2.0-mvp",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
@@ -29,14 +30,14 @@ app.add_middleware(
 
 security = HTTPBearer(auto_error=False)
 
-# ── In-memory store (MVP — remplacer par PostgreSQL en prod) ──────────────────
-DB = {
-    "users": {},
-    "tokens": {},
-    "patients": {},
-    "appointments": [],
-    "messages": [],
-}
+# ── Supabase client ────────────────────────────────────────────────────────────
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+# ── In-memory fallback (tokens + non-persistent data) ─────────────────────────
+TOKENS = {}  # token -> user_id
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def hash_pwd(pwd: str) -> str:
@@ -44,206 +45,137 @@ def hash_pwd(pwd: str) -> str:
 
 def make_token(user_id: str) -> str:
     tok = secrets.token_urlsafe(32)
-    DB["tokens"][tok] = {"user_id": user_id, "expires": datetime.utcnow() + timedelta(hours=24)}
+    TOKENS[tok] = {"user_id": user_id, "expires": datetime.utcnow() + timedelta(hours=24)}
     return tok
 
 def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     if not creds:
         raise HTTPException(status_code=401, detail="Token manquant")
-    entry = DB["tokens"].get(creds.credentials)
-    if not entry or entry["expires"] < datetime.utcnow():
+    tok = creds.credentials
+    if tok not in TOKENS:
         raise HTTPException(status_code=401, detail="Token invalide ou expiré")
-    return DB["users"].get(entry["user_id"])
+    data = TOKENS[tok]
+    if datetime.utcnow() > data["expires"]:
+        del TOKENS[tok]
+        raise HTTPException(status_code=401, detail="Token expiré")
+    return data["user_id"]
 
-# ── Schemas ───────────────────────────────────────────────────────────────────
-class RegisterIn(BaseModel):
-    email: str
+# ── Modèles ───────────────────────────────────────────────────────────────────
+class RegisterRequest(BaseModel):
+    email: EmailStr
     password: str
     full_name: str
-    role: str = "patient"  # patient | professional | admin
+    role: str = "patient"
+    phone: Optional[str] = None
 
-class LoginIn(BaseModel):
-    email: str
+class LoginRequest(BaseModel):
+    email: EmailStr
     password: str
 
-class PatientRecord(BaseModel):
-    blood_type: Optional[str] = None
-    allergies: List[str] = []
-    conditions: List[str] = []
-    medications: List[str] = []
-    notes: Optional[str] = None
-
-class AppointmentIn(BaseModel):
-    patient_id: str
-    professional_id: str
-    date: str        # ISO8601
-    type: str        # video | audio | in-person
-    reason: Optional[str] = None
-
-class MessageIn(BaseModel):
-    to_user_id: str
-    content: str
-    encrypted: bool = True
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
 
 # ── Routes ────────────────────────────────────────────────────────────────────
-
-@app.get("/", tags=["Health"])
+@app.get("/")
 def root():
     return {
         "service": "OpenHealthPlat API",
-        "version": "0.1.0-mvp",
-        "status": "operational",
-        "docs": "/api/docs",
-        "license": "AGPL-3.0",
-        "github": "https://github.com/openhealthplat",
+        "version": "0.2.0-mvp",
+        "status": "running",
+        "docs": "/api/docs"
     }
 
-@app.get("/api/health", tags=["Health"])
-def health_check():
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat(), "uptime": "live"}
+@app.get("/health")
+def health():
+    db_ok = supabase is not None
+    return {"status": "ok", "database": "supabase" if db_ok else "memory-only"}
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
-
-@app.post("/api/v1/auth/register", tags=["Auth"])
-def register(body: RegisterIn):
-    if body.email in DB["users"]:
+@app.post("/auth/register", status_code=201)
+def register(req: RegisterRequest):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    
+    # Vérifie si l'email existe déjà
+    existing = supabase.table("users").select("id").eq("email", req.email).execute()
+    if existing.data:
         raise HTTPException(status_code=409, detail="Email déjà utilisé")
-    user_id = secrets.token_hex(8)
-    DB["users"][body.email] = {
-        "id": user_id, "email": body.email,
-        "full_name": body.full_name, "role": body.role,
-        "password_hash": hash_pwd(body.password),
-        "created_at": datetime.utcnow().isoformat(),
+    
+    # Crée l'utilisateur
+    user_data = {
+        "email": req.email,
+        "password_hash": hash_pwd(req.password),
+        "full_name": req.full_name,
+        "role": req.role,
+        "phone": req.phone,
     }
-    DB["users"][user_id] = DB["users"][body.email]  # index by id too
-    token = make_token(user_id)
-    return {"token": token, "user_id": user_id, "role": body.role, "message": "Compte créé"}
-
-@app.post("/api/v1/auth/login", tags=["Auth"])
-def login(body: LoginIn):
-    user = DB["users"].get(body.email)
-    if not user or user["password_hash"] != hash_pwd(body.password):
-        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+    result = supabase.table("users").insert(user_data).execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Erreur lors de la création du compte")
+    
+    user = result.data[0]
     token = make_token(user["id"])
-    return {"token": token, "user_id": user["id"], "role": user["role"], "full_name": user["full_name"]}
-
-@app.get("/api/v1/auth/me", tags=["Auth"])
-def me(user=Depends(get_current_user)):
-    return {k: v for k, v in user.items() if k != "password_hash"}
-
-# ── Dossier patient ───────────────────────────────────────────────────────────
-
-@app.get("/api/v1/patients/{patient_id}/record", tags=["Dossier Medical"])
-def get_record(patient_id: str, user=Depends(get_current_user)):
-    record = DB["patients"].get(patient_id, {
-        "patient_id": patient_id, "blood_type": None,
-        "allergies": [], "conditions": [], "medications": [], "notes": "",
-        "last_updated": None,
-    })
-    return record
-
-@app.put("/api/v1/patients/{patient_id}/record", tags=["Dossier Medical"])
-def update_record(patient_id: str, body: PatientRecord, user=Depends(get_current_user)):
-    DB["patients"][patient_id] = {
-        "patient_id": patient_id, **body.dict(),
-        "last_updated": datetime.utcnow().isoformat(),
-        "updated_by": user["id"],
-    }
-    return {"message": "Dossier mis à jour", "patient_id": patient_id}
-
-@app.get("/api/v1/patients/{patient_id}/record/fhir", tags=["Dossier Medical"])
-def get_record_fhir(patient_id: str, user=Depends(get_current_user)):
-    """Export FHIR R4 — Patient resource"""
-    record = DB["patients"].get(patient_id, {})
+    
     return {
-        "resourceType": "Patient",
-        "id": patient_id,
-        "meta": {"profile": ["http://hl7.org/fhir/StructureDefinition/Patient"]},
-        "text": {"status": "generated"},
-        "extension": [
-            {"url": "allergies", "valueString": ", ".join(record.get("allergies", []))},
-            {"url": "conditions", "valueString": ", ".join(record.get("conditions", []))},
-        ],
+        "message": "Compte créé avec succès",
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+        }
     }
 
-# ── Rendez-vous ────────────────────────────────────────────────────────────────
-
-@app.post("/api/v1/appointments", tags=["Rendez-vous"])
-def create_appointment(body: AppointmentIn, user=Depends(get_current_user)):
-    appt_id = secrets.token_hex(6)
-    appt = {
-        "id": appt_id, **body.dict(),
-        "status": "confirmed",
-        "created_at": datetime.utcnow().isoformat(),
-    }
-    DB["appointments"].append(appt)
-    return {"message": "Rendez-vous confirmé", "appointment": appt}
-
-@app.get("/api/v1/appointments", tags=["Rendez-vous"])
-def list_appointments(user=Depends(get_current_user)):
-    uid = user["id"]
-    appts = [a for a in DB["appointments"]
-             if a["patient_id"] == uid or a["professional_id"] == uid]
-    return {"appointments": appts, "count": len(appts)}
-
-@app.delete("/api/v1/appointments/{appt_id}", tags=["Rendez-vous"])
-def cancel_appointment(appt_id: str, user=Depends(get_current_user)):
-    for a in DB["appointments"]:
-        if a["id"] == appt_id:
-            a["status"] = "cancelled"
-            return {"message": "Rendez-vous annulé"}
-    raise HTTPException(404, "Rendez-vous introuvable")
-
-# ── Téléconsultation ───────────────────────────────────────────────────────────
-
-@app.post("/api/v1/consultations/room", tags=["Teleconsultation"])
-def create_room(appointment_id: str, user=Depends(get_current_user)):
-    """Génère un lien de salle Jitsi Meet chiffrée"""
-    room_id = secrets.token_urlsafe(12)
-    jitsi_url = f"https://meet.jit.si/ohp-{room_id}"
+@app.post("/auth/login")
+def login(req: LoginRequest):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    
+    result = supabase.table("users").select("*").eq("email", req.email).eq("password_hash", hash_pwd(req.password)).execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+    
+    user = result.data[0]
+    token = make_token(user["id"])
+    
     return {
-        "room_id": room_id,
-        "jitsi_url": jitsi_url,
-        "e2ee": True,
-        "audio_only_url": f"{jitsi_url}#config.startWithVideoMuted=true",
-        "expires_in": "60min",
-        "appointment_id": appointment_id,
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+        }
     }
 
-# ── Messagerie ─────────────────────────────────────────────────────────────────
+@app.get("/auth/me")
+def me(user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    
+    result = supabase.table("users").select("id, email, full_name, role, phone, created_at").eq("id", user_id).execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    
+    return result.data[0]
 
-@app.post("/api/v1/messages", tags=["Messagerie"])
-def send_message(body: MessageIn, user=Depends(get_current_user)):
-    msg_id = secrets.token_hex(8)
-    msg = {
-        "id": msg_id,
-        "from_user_id": user["id"],
-        "to_user_id": body.to_user_id,
-        "content": body.content,
-        "encrypted": body.encrypted,
-        "sent_at": datetime.utcnow().isoformat(),
-        "read": False,
-    }
-    DB["messages"].append(msg)
-    return {"message_id": msg_id, "status": "sent"}
+@app.put("/auth/me")
+def update_profile(update: ProfileUpdate, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    
+    data = {k: v for k, v in update.dict().items() if v is not None}
+    result = supabase.table("users").update(data).eq("id", user_id).execute()
+    return {"message": "Profil mis à jour", "user": result.data[0] if result.data else {}}
 
-@app.get("/api/v1/messages", tags=["Messagerie"])
-def get_messages(user=Depends(get_current_user)):
-    uid = user["id"]
-    msgs = [m for m in DB["messages"]
-            if m["from_user_id"] == uid or m["to_user_id"] == uid]
-    return {"messages": msgs, "unread": sum(1 for m in msgs if not m["read"] and m["to_user_id"] == uid)}
-
-# ── Stats anonymisées ──────────────────────────────────────────────────────────
-
-@app.get("/api/v1/stats", tags=["Statistiques"])
-def get_stats():
-    """Statistiques anonymisées — aucune donnée personnelle"""
-    return {
-        "total_users": len([u for u in DB["users"] if len(u) == 16]),
-        "total_appointments": len(DB["appointments"]),
-        "total_messages": len(DB["messages"]),
-        "platform": "OpenHealthPlat MVP",
-        "version": "0.1.0",
-        "note": "Données anonymisées — aucune donnée personnelle exposée",
-    }
+@app.get("/users/count")
+def users_count():
+    """Nombre total d'utilisateurs inscrits (public)"""
+    if not supabase:
+        return {"count": 0}
+    result = supabase.table("users").select("id", count="exact").execute()
+    return {"count": result.count or 0}
