@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rendez-vous — OpenHealthPlat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #000; --surface: #111; --surface2: #1a1a1a; --border: #2a2a2a;
+      --text: #f5f5f7; --muted: #86868b; --green: #30d158; --blue: #0a84ff;
+      --red: #ff453a; --orange: #ff9f0a; --purple: #bf5af2;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); z-index: 100; }
+    .nav-logo { font-size: 18px; font-weight: 700; color: var(--green); text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-user { font-size: 14px; color: var(--muted); }
+    .btn-back { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; text-decoration: none; }
+    .btn-logout { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; }
+
+    main { max-width: 860px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 40px; }
+
+    /* TABS */
+    .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 32px; width: fit-content; }
+    .tab { padding: 8px 20px; border-radius: 9px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--muted); transition: all 0.2s; }
+    .tab.active { background: var(--blue); color: #fff; }
+
+    /* BOOKING FORM */
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+    .section-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+    /* SPECIALTY GRID */
+    .specialty-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .spec-card { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .spec-card:hover { border-color: var(--blue); }
+    .spec-card.active { border-color: var(--blue); background: rgba(10,132,255,0.1); }
+    .spec-icon { font-size: 28px; margin-bottom: 8px; }
+    .spec-name { font-size: 13px; font-weight: 600; }
+    .spec-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    input, select, textarea {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      padding: 12px 14px; border-radius: 10px; font-size: 14px; font-family: inherit;
+      transition: border-color 0.2s; width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* TIME SLOTS */
+    .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .time-slot { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .time-slot:hover { border-color: var(--blue); color: var(--text); }
+    .time-slot.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .time-slot.taken { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; }
+
+    /* BTN */
+    .btn-primary { background: var(--blue); color: #fff; border: none; padding: 14px 32px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* APPOINTMENTS LIST */
+    .appt-list { display: flex; flex-direction: column; gap: 16px; }
+    .appt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+    .appt-date { background: var(--blue); color: #fff; border-radius: 10px; padding: 10px 14px; text-align: center; min-width: 60px; }
+    .appt-date-day { font-size: 22px; font-weight: 700; line-height: 1; }
+    .appt-date-month { font-size: 11px; text-transform: uppercase; margin-top: 2px; }
+    .appt-info { flex: 1; }
+    .appt-title { font-size: 15px; font-weight: 600; }
+    .appt-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .appt-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .status-pending { background: rgba(255,159,10,0.15); color: var(--orange); }
+    .status-confirmed { background: rgba(48,209,88,0.15); color: var(--green); }
+    .status-cancelled { background: rgba(255,69,58,0.15); color: var(--red); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; }
+
+    /* SUCCESS */
+    .success-box { background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.3); border-radius: 12px; padding: 20px; text-align: center; display: none; margin-bottom: 20px; }
+    .success-box h3 { color: var(--green); margin-bottom: 8px; }
+
+    @media (max-width: 600px) {
+      .specialty-grid { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .time-grid { grid-template-columns: repeat(3, 1fr); }
+      nav { padding: 12px 16px; }
+      main { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="dashboard.html" class="nav-logo">🌿 OpenHealthPlat</a>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <a href="dashboard.html" class="btn-back">← Tableau de bord</a>
+    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+  </div>
+</nav>
+
+<main>
+  <h1>📅 Rendez-vous</h1>
+  <p class="subtitle">Prenez rendez-vous avec un professionnel de santé en quelques clics.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('book')">Prendre un RDV</button>
+    <button class="tab" onclick="showTab('list')">Mes RDV</button>
+  </div>
+
+  <!-- BOOKING TAB -->
+  <div id="tabBook">
+    <div class="success-box" id="successBox">
+      <div style="font-size:40px;margin-bottom:8px;">✅</div>
+      <h3>Rendez-vous confirmé !</h3>
+      <p style="color:var(--muted);font-size:14px;" id="successMsg"></p>
+    </div>
+
+    <!-- SPECIALTY -->
+    <div class="section">
+      <div class="section-title">🏥 Choisissez une spécialité</div>
+      <div class="specialty-grid">
+        <div class="spec-card" data-spec="Médecin généraliste" onclick="selectSpec(this)">
+          <div class="spec-icon">👨‍⚕️</div>
+          <div class="spec-name">Médecin généraliste</div>
+          <div class="spec-desc">Consultation générale</div>
+        </div>
+        <div class="spec-card" data-spec="Cardiologue" onclick="selectSpec(this)">
+          <div class="spec-icon">🫀</div>
+          <div class="spec-name">Cardiologue</div>
+          <div class="spec-desc">Cœur et vaisseaux</div>
+        </div>
+        <div class="spec-card" data-spec="Pédiatre" onclick="selectSpec(this)">
+          <div class="spec-icon">👶</div>
+          <div class="spec-name">Pédiatre</div>
+          <div class="spec-desc">Santé des enfants</div>
+        </div>
+        <div class="spec-card" data-spec="Dermatologue" onclick="selectSpec(this)">
+          <div class="spec-icon">🧴</div>
+          <div class="spec-name">Dermatologue</div>
+          <div class="spec-desc">Peau et cheveux</div>
+        </div>
+        <div class="spec-card" data-spec="Gynécologue" onclick="selectSpec(this)">
+          <div class="spec-icon">🌸</div>
+          <div class="spec-name">Gynécologue</div>
+          <div class="spec-desc">Santé féminine</div>
+        </div>
+        <div class="spec-card" data-spec="Neurologue" onclick="selectSpec(this)">
+          <div class="spec-icon">🧠</div>
+          <div class="spec-name">Neurologue</div>
+          <div class="spec-desc">Système nerveux</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATE & TIME -->
+    <div class="section">
+      <div class="section-title">📆 Date et heure</div>
+      <div class="form-grid" style="margin-bottom:20px;">
+        <div class="form-group">
+          <label>Date souhaitée</label>
+          <input type="date" id="apptDate" min="" />
+        </div>
+        <div class="form-group">
+          <label>Médecin (optionnel)</label>
+          <input type="text" id="doctorName" placeholder="Ex: Dr. Kamga Martin" />
+        </div>
+      </div>
+      <label style="font-size:13px;color:var(--muted);font-weight:500;display:block;margin-bottom:12px;">Créneau horaire</label>
+      <div class="time-grid" id="timeGrid">
+        <div class="time-slot" data-time="08:00">08:00</div>
+        <div class="time-slot" data-time="08:30">08:30</div>
+        <div class="time-slot" data-time="09:00">09:00</div>
+        <div class="time-slot" data-time="09:30">09:30</div>
+        <div class="time-slot" data-time="10:00">10:00</div>
+        <div class="time-slot" data-time="10:30">10:30</div>
+        <div class="time-slot" data-time="11:00">11:00</div>
+        <div class="time-slot" data-time="11:30">11:30</div>
+        <div class="time-slot" data-time="14:00">14:00</div>
+        <div class="time-slot" data-time="14:30">14:30</div>
+        <div class="time-slot" data-time="15:00">15:00</div>
+        <div class="time-slot" data-time="15:30">15:30</div>
+        <div class="time-slot" data-time="16:00">16:00</div>
+        <div class="time-slot" data-time="16:30">16:30</div>
+        <div class="time-slot" data-time="17:00">17:00</div>
+        <div class="time-slot" data-time="17:30">17:30</div>
+      </div>
+    </div>
+
+    <!-- REASON -->
+    <div class="section">
+      <div class="section-title">📝 Motif de consultation</div>
+      <div class="form-group">
+        <textarea id="reason" placeholder="Décrivez brièvement le motif de votre consultation..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="bookBtn" onclick="bookAppointment()">📅 Confirmer le rendez-vous</button>
+  </div>
+
+  <!-- LIST TAB -->
+  <div id="tabList" style="display:none;">
+    <div id="apptList" class="appt-list">
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <p>Chargement de vos rendez-vous...</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = 'https://openhealthplat-site.onrender.com';
+  const token = localStorage.getItem('ohp_token');
+  const user = JSON.parse(localStorage.getItem('ohp_user') || '{}');
+  if (!token) { window.location.href = 'login.html'; }
+  document.getElementById('navUser').textContent = user.full_name || '';
+
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('apptDate').min = today;
+  document.getElementById('apptDate').value = today;
+
+  let selectedSpec = '';
+  let selectedTime = '';
+
+  function selectSpec(el) {
+    document.querySelectorAll('.spec-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    selectedSpec = el.dataset.spec;
+  }
+
+  document.querySelectorAll('.time-slot').forEach(slot => {
+    slot.addEventListener('click', () => {
+      if (slot.classList.contains('taken')) return;
+      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('active'));
+      slot.classList.add('active');
+      selectedTime = slot.dataset.time;
+    });
+  });
+
+  function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tabBook').style.display = tab === 'book' ? 'block' : 'none';
+    document.getElementById('tabList').style.display = tab === 'list' ? 'block' : 'none';
+    if (tab === 'list') loadAppointments();
+  }
+
+  async function bookAppointment() {
+    if (!selectedSpec) { alert('Choisissez une spécialité'); return; }
+    if (!selectedTime) { alert('Choisissez un créneau horaire'); return; }
+    const date = document.getElementById('apptDate').value;
+    if (!date) { alert('Choisissez une date'); return; }
+
+    const btn = document.getElementById('bookBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Confirmation...';
+
+    const payload = {
+      specialty: selectedSpec,
+      doctor_name: document.getElementById('doctorName').value || null,
+      appointment_date: date,
+      appointment_time: selectedTime,
+      reason: document.getElementById('reason').value || null,
+    };
+
+    try {
+      const res = await fetch(`${API}/appointments`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const box = document.getElementById('successBox');
+        const d = new Date(date);
+        const months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+        box.style.display = 'block';
+        document.getElementById('successMsg').textContent = `${selectedSpec} — ${d.getDate()} ${months[d.getMonth()]} à ${selectedTime}`;
+        box.scrollIntoView({ behavior: 'smooth' });
+        btn.textContent = '✅ Réservé !';
+        setTimeout(() => { btn.disabled = false; btn.textContent = '📅 Confirmer le rendez-vous'; }, 3000);
+      } else { throw new Error(); }
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = '❌ Erreur — réessayez';
+      setTimeout(() => { btn.textContent = '📅 Confirmer le rendez-vous'; }, 2000);
+    }
+  }
+
+  async function loadAppointments() {
+    const list = document.getElementById('apptList');
+    try {
+      const res = await fetch(`${API}/appointments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.length) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>Aucun rendez-vous pour le moment</p></div>';
+          return;
+        }
+        const months = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+        const statusLabels = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
+        const statusClasses = { pending: 'status-pending', confirmed: 'status-confirmed', cancelled: 'status-cancelled' };
+        list.innerHTML = data.map(a => {
+          const d = new Date(a.appointment_date);
+          return `<div class="appt-card">
+            <div class="appt-date">
+              <div class="appt-date-day">${d.getDate()}</div>
+              <div class="appt-date-month">${months[d.getMonth()]}</div>
+            </div>
+            <div class="appt-info">
+              <div class="appt-title">${a.specialty}</div>
+              <div class="appt-sub">${a.appointment_time}${a.doctor_name ? ' · ' + a.doctor_name : ''}${a.reason ? ' · ' + a.reason : ''}</div>
+            </div>
+            <span class="appt-status ${statusClasses[a.status] || 'status-pending'}">${statusLabels[a.status] || 'En attente'}</span>
+          </div>`;
+        }).join('');
+      }
+    } catch(e) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Impossible de charger les rendez-vous</p></div>';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('ohp_token');
+    localStorage.removeItem('ohp_user');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

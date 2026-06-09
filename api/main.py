@@ -214,3 +214,35 @@ def save_medical_record(record: MedicalRecord, user_id: str = Depends(get_curren
         result = supabase.table("medical_records").insert(data).execute()
     
     return {"message": "Dossier médical enregistré", "data": result.data[0] if result.data else {}}
+
+# ── Modèle Rendez-vous ────────────────────────────────────────────────────────
+class AppointmentRequest(BaseModel):
+    specialty: str
+    doctor_name: Optional[str] = None
+    appointment_date: str
+    appointment_time: str
+    reason: Optional[str] = None
+
+# ── Routes Rendez-vous ────────────────────────────────────────────────────────
+@app.post("/appointments", status_code=201)
+def create_appointment(req: AppointmentRequest, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    data = {
+        "patient_id": user_id,
+        "specialty": req.specialty,
+        "doctor_name": req.doctor_name,
+        "appointment_date": req.appointment_date,
+        "appointment_time": req.appointment_time,
+        "reason": req.reason,
+        "status": "pending",
+    }
+    result = supabase.table("appointments").insert(data).execute()
+    return {"message": "Rendez-vous créé", "data": result.data[0] if result.data else {}}
+
+@app.get("/appointments")
+def get_appointments(user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("appointments").select("*").eq("patient_id", user_id).order("appointment_date", desc=False).execute()
+    return result.data or []
