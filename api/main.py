@@ -272,3 +272,35 @@ def get_messages(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=503, detail="Base de données non configurée")
     result = supabase.table("messages").select("*").eq("user_id", user_id).order("created_at").execute()
     return result.data or []
+
+# ── Modèle Téléconsultation ───────────────────────────────────────────────────
+class TeleconsultRequest(BaseModel):
+    specialty: str
+    doctor_name: Optional[str] = None
+    scheduled_date: str
+    scheduled_time: str
+    reason: Optional[str] = None
+
+# ── Routes Téléconsultation ───────────────────────────────────────────────────
+@app.post("/teleconsultations", status_code=201)
+def create_teleconsult(req: TeleconsultRequest, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    data = {
+        "patient_id": user_id,
+        "specialty": req.specialty,
+        "doctor_name": req.doctor_name,
+        "scheduled_date": req.scheduled_date,
+        "scheduled_time": req.scheduled_time,
+        "reason": req.reason,
+        "status": "pending",
+    }
+    result = supabase.table("teleconsultations").insert(data).execute()
+    return {"message": "Téléconsultation planifiée", "data": result.data[0] if result.data else {}}
+
+@app.get("/teleconsultations")
+def get_teleconsults(user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("teleconsultations").select("*").eq("patient_id", user_id).order("scheduled_date", desc=False).execute()
+    return result.data or []
