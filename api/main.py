@@ -304,3 +304,39 @@ def get_teleconsults(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=503, detail="Base de données non configurée")
     result = supabase.table("teleconsultations").select("*").eq("patient_id", user_id).order("scheduled_date", desc=False).execute()
     return result.data or []
+
+# ── Modèle Métriques Santé ────────────────────────────────────────────────────
+class HealthMetric(BaseModel):
+    metric_type: str
+    value: float
+    value2: Optional[float] = None
+    unit: Optional[str] = None
+    measured_at: Optional[str] = None
+    notes: Optional[str] = None
+
+# ── Routes Métriques Santé ────────────────────────────────────────────────────
+@app.post("/health-metrics", status_code=201)
+def add_metric(req: HealthMetric, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    data = {
+        "user_id": user_id,
+        "metric_type": req.metric_type,
+        "value": req.value,
+        "value2": req.value2,
+        "unit": req.unit,
+        "measured_at": req.measured_at or datetime.utcnow().isoformat(),
+        "notes": req.notes,
+    }
+    result = supabase.table("health_metrics").insert(data).execute()
+    return {"message": "Mesure enregistrée", "data": result.data[0] if result.data else {}}
+
+@app.get("/health-metrics")
+def get_metrics(metric_type: Optional[str] = None, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    query = supabase.table("health_metrics").select("*").eq("user_id", user_id)
+    if metric_type:
+        query = query.eq("metric_type", metric_type)
+    result = query.order("measured_at", desc=False).execute()
+    return result.data or []

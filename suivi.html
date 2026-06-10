@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suivi Santé — OpenHealthPlat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #000; --surface: #111; --surface2: #1a1a1a; --border: #2a2a2a;
+      --text: #f5f5f7; --muted: #86868b;
+      --green: #30d158; --blue: #0a84ff; --red: #ff453a;
+      --orange: #ff9f0a; --purple: #bf5af2; --yellow: #ffd60a;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 17px; font-weight: 700; color: var(--green); text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-user { font-size: 13px; color: var(--muted); }
+    .btn-back { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; text-decoration: none; }
+    .btn-logout { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; }
+
+    main { max-width: 960px; margin: 0 auto; padding: 36px 20px 60px; }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+    /* METRIC TABS */
+    .metric-tabs { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+    .mtab { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; background: var(--surface); border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 500; }
+    .mtab:hover { border-color: #444; }
+    .mtab.active { border-color: var(--active-color, var(--blue)); background: rgba(var(--active-rgb, 10,132,255), 0.12); color: var(--active-color, var(--blue)); }
+    .mtab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--active-color, var(--muted)); }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 26px; font-weight: 700; line-height: 1; }
+    .stat-unit { font-size: 13px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+    .stat-trend { font-size: 12px; margin-top: 6px; }
+    .trend-up { color: var(--red); }
+    .trend-down { color: var(--green); }
+    .trend-ok { color: var(--green); }
+
+    /* CHART */
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .chart-title { font-size: 15px; font-weight: 600; }
+    .range-btns { display: flex; gap: 6px; }
+    .rbtn { padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); transition: all 0.2s; }
+    .rbtn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* ZONE INDICATOR */
+    .zone-bar { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .zone { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .zone-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ADD ENTRY FORM */
+    .add-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+    .add-title { font-size: 15px; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 100px; }
+    label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    input, select, textarea { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 11px 13px; border-radius: 10px; font-size: 14px; font-family: inherit; width: 100%; outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: var(--blue); }
+    .btn-add { background: var(--blue); color: #fff; border: none; padding: 11px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+    .btn-add:hover { opacity: 0.85; }
+    .success-flash { background: rgba(48,209,88,0.12); border: 1px solid rgba(48,209,88,0.3); border-radius: 10px; padding: 10px 16px; font-size: 13px; color: var(--green); display: none; margin-top: 12px; }
+
+    /* HISTORY TABLE */
+    .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .history-header { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+    .history-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border); align-items: center; font-size: 14px; }
+    .history-row:last-child { border-bottom: none; }
+    .history-row:hover { background: var(--surface2); }
+    .h-date { color: var(--muted); font-size: 12px; }
+    .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-ok { background: rgba(48,209,88,0.15); color: var(--green); }
+    .badge-warn { background: rgba(255,159,10,0.15); color: var(--orange); }
+    .badge-danger { background: rgba(255,69,58,0.15); color: var(--red); }
+    .empty { text-align: center; padding: 48px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+    .alert-banner { background: rgba(255,69,58,0.1); border: 1px solid rgba(255,69,58,0.3); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: none; font-size: 14px; color: var(--red); }
+    .alert-banner.show { display: flex; align-items: center; gap: 10px; }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .history-row { grid-template-columns: 1fr auto auto; }
+      .history-row > :nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="dashboard.html" class="nav-logo">🌿 OpenHealthPlat</a>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <a href="dashboard.html" class="btn-back">← Tableau de bord</a>
+    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+  </div>
+</nav>
+
+<main>
+  <h1>📊 Suivi Santé</h1>
+  <p class="subtitle">Suivez vos indicateurs de santé et visualisez leur évolution dans le temps.</p>
+
+  <div class="alert-banner" id="alertBanner">⚠️ <span id="alertMsg"></span></div>
+
+  <!-- METRIC SELECTOR -->
+  <div class="metric-tabs">
+    <div class="mtab active" data-metric="glycemie" style="--active-color:#ff9f0a;--active-rgb:255,159,10" onclick="switchMetric('glycemie',this)">
+      <div class="mtab-dot" style="background:#ff9f0a"></div>Glycémie
+    </div>
+    <div class="mtab" data-metric="tension" style="--active-color:#ff453a;--active-rgb:255,69,58" onclick="switchMetric('tension',this)">
+      <div class="mtab-dot" style="background:#ff453a"></div>Tension artérielle
+    </div>
+    <div class="mtab" data-metric="poids" style="--active-color:#0a84ff;--active-rgb:10,132,255" onclick="switchMetric('poids',this)">
+      <div class="mtab-dot" style="background:#0a84ff"></div>Poids
+    </div>
+    <div class="mtab" data-metric="temperature" style="--active-color:#bf5af2;--active-rgb:191,90,242" onclick="switchMetric('temperature',this)">
+      <div class="mtab-dot" style="background:#bf5af2"></div>Température
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Dernière mesure</div>
+      <div><span class="stat-value" id="statLast">—</span><span class="stat-unit" id="statUnit"></span></div>
+      <div class="stat-trend" id="statTrend"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Moyenne (30j)</div>
+      <div><span class="stat-value" id="statAvg">—</span><span class="stat-unit" id="statUnit2"></span></div>
+      <div class="stat-trend" id="statAvgTrend"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mesures totales</div>
+      <div><span class="stat-value" id="statCount">0</span></div>
+      <div class="stat-trend" style="color:var(--muted)" id="statRange"></div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title" id="chartTitle">Évolution de la glycémie</div>
+      <div class="range-btns">
+        <button class="rbtn active" onclick="setRange(7,this)">7j</button>
+        <button class="rbtn" onclick="setRange(30,this)">30j</button>
+        <button class="rbtn" onclick="setRange(90,this)">3 mois</button>
+        <button class="rbtn" onclick="setRange(0,this)">Tout</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+    <div class="zone-bar" id="zoneLegend"></div>
+  </div>
+
+  <!-- ADD ENTRY -->
+  <div class="add-card">
+    <div class="add-title">➕ <span id="addTitle">Ajouter une mesure de glycémie</span></div>
+    <div class="form-row" id="formFields">
+      <!-- filled by JS -->
+    </div>
+    <div class="success-flash" id="successFlash">✅ Mesure enregistrée avec succès !</div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-card">
+    <div class="history-header">
+      <span>Historique des mesures</span>
+      <span style="font-size:12px;color:var(--muted)" id="historyCount"></span>
+    </div>
+    <div id="historyBody"></div>
+  </div>
+</main>
+
+<script>
+const API = 'https://openhealthplat-site.onrender.com';
+const token = localStorage.getItem('ohp_token');
+const user = JSON.parse(localStorage.getItem('ohp_user') || '{}');
+if (!token) { window.location.href = 'login.html'; }
+document.getElementById('navUser').textContent = user.full_name || '';
+
+let currentMetric = 'glycemie';
+let allData = [];
+let chart = null;
+let currentRange = 7;
+
+const METRICS = {
+  glycemie: {
+    label: 'Glycémie', unit: 'mg/dL', color: '#ff9f0a',
+    chartTitle: 'Évolution de la glycémie',
+    zones: [{label:'Hypoglycémie', color:'#ff453a', min:0, max:70}, {label:'Normal', color:'#30d158', min:70, max:140}, {label:'Élevée', color:'#ff9f0a', min:140, max:200}, {label:'Très élevée', color:'#ff453a', min:200, max:9999}],
+    fields: [{id:'val', label:'Glycémie (mg/dL)', type:'number', placeholder:'Ex: 95', step:'1'}],
+    badge: v => v < 70 ? 'danger' : v <= 140 ? 'ok' : v <= 200 ? 'warn' : 'danger',
+    badgeLabel: v => v < 70 ? 'Hypo' : v <= 140 ? 'Normal' : v <= 200 ? 'Élevée' : 'Critique',
+    alert: v => v < 60 || v > 250,
+    alertMsg: v => v < 60 ? `⚠️ Glycémie très basse (${v} mg/dL) — Consultez un médecin` : `⚠️ Glycémie très élevée (${v} mg/dL) — Consultez un médecin`,
+  },
+  tension: {
+    label: 'Tension artérielle', unit: 'mmHg', color: '#ff453a',
+    chartTitle: 'Évolution de la tension artérielle',
+    zones: [{label:'Optimale (≤120/80)', color:'#30d158'}, {label:'Normale (≤130/85)', color:'#ffd60a'}, {label:'Élevée (>130/85)', color:'#ff453a'}],
+    fields: [{id:'val', label:'Systolique (mmHg)', type:'number', placeholder:'Ex: 120', step:'1'}, {id:'val2', label:'Diastolique (mmHg)', type:'number', placeholder:'Ex: 80', step:'1'}],
+    badge: v => v <= 120 ? 'ok' : v <= 140 ? 'warn' : 'danger',
+    badgeLabel: v => v <= 120 ? 'Optimale' : v <= 140 ? 'Normale' : 'Élevée',
+    alert: v => v > 180,
+    alertMsg: v => `⚠️ Tension très élevée (${v} mmHg) — Urgence médicale possible`,
+  },
+  poids: {
+    label: 'Poids', unit: 'kg', color: '#0a84ff',
+    chartTitle: 'Évolution du poids',
+    zones: [{label:'IMC < 18.5 (Insuffisance)', color:'#ff9f0a'}, {label:'IMC 18.5–25 (Normal)', color:'#30d158'}, {label:'IMC > 25 (Surpoids)', color:'#ff453a'}],
+    fields: [{id:'val', label:'Poids (kg)', type:'number', placeholder:'Ex: 70.5', step:'0.1'}],
+    badge: () => 'ok',
+    badgeLabel: () => 'Enregistré',
+    alert: () => false,
+    alertMsg: () => '',
+  },
+  temperature: {
+    label: 'Température', unit: '°C', color: '#bf5af2',
+    chartTitle: 'Évolution de la température',
+    zones: [{label:'Hypothermie (<36°C)', color:'#0a84ff'}, {label:'Normal (36–37.5°C)', color:'#30d158'}, {label:'Fièvre (>37.5°C)', color:'#ff453a'}],
+    fields: [{id:'val', label:'Température (°C)', type:'number', placeholder:'Ex: 37.2', step:'0.1'}],
+    badge: v => v < 36 ? 'warn' : v <= 37.5 ? 'ok' : v <= 39 ? 'warn' : 'danger',
+    badgeLabel: v => v < 36 ? 'Hypo' : v <= 37.5 ? 'Normal' : v <= 39 ? 'Fièvre' : 'Fièvre élevée',
+    alert: v => v > 39.5,
+    alertMsg: v => `⚠️ Fièvre élevée (${v}°C) — Consultez un médecin`,
+  }
+};
+
+function switchMetric(metric, el) {
+  currentMetric = metric;
+  document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadData();
+  buildForm();
+  document.getElementById('addTitle').textContent = `Ajouter une mesure de ${METRICS[metric].label.toLowerCase()}`;
+  document.getElementById('chartTitle').textContent = METRICS[metric].chartTitle;
+}
+
+function buildForm() {
+  const m = METRICS[currentMetric];
+  const container = document.getElementById('formFields');
+  const fieldsHtml = m.fields.map(f => `
+    <div class="form-group">
+      <label>${f.label}</label>
+      <input type="${f.type}" id="input_${f.id}" placeholder="${f.placeholder}" step="${f.step||'any'}" />
+    </div>`).join('');
+  container.innerHTML = fieldsHtml + `
+    <div class="form-group" style="max-width:160px">
+      <label>Date/heure</label>
+      <input type="datetime-local" id="input_date" />
+    </div>
+    <div class="form-group" style="max-width:180px">
+      <label>Notes (optionnel)</label>
+      <input type="text" id="input_notes" placeholder="Ex: à jeun..." />
+    </div>
+    <div class="form-group" style="flex:0">
+      <label style="visibility:hidden">.</label>
+      <button class="btn-add" onclick="addEntry()">Enregistrer</button>
+    </div>`;
+  // Set default datetime to now
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('input_date').value = local;
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(`${API}/health-metrics?metric_type=${currentMetric}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) { allData = await res.json(); }
+    else { allData = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]'); }
+  } catch(e) {
+    allData = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]');
+  }
+  renderAll();
+}
+
+function filterByRange(days) {
+  if (days === 0) return allData;
+  const cutoff = new Date(Date.now() - days * 86400000);
+  return allData.filter(d => new Date(d.measured_at) >= cutoff);
+}
+
+function setRange(days, btn) {
+  currentRange = days;
+  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChart();
+}
+
+function renderAll() {
+  renderStats();
+  renderChart();
+  renderHistory();
+  renderZoneLegend();
+  checkAlerts();
+}
+
+function renderStats() {
+  const m = METRICS[currentMetric];
+  const sorted = [...allData].sort((a,b) => new Date(a.measured_at) - new Date(b.measured_at));
+  const last = sorted[sorted.length - 1];
+  const s1 = document.getElementById('statUnit'); const s2 = document.getElementById('statUnit2');
+  s1.textContent = last ? ` ${m.unit}` : ''; s2.textContent = last ? ` ${m.unit}` : '';
+  document.getElementById('statLast').textContent = last ? last.value : '—';
+  document.getElementById('statCount').textContent = allData.length;
+  if (allData.length >= 2) {
+    const prev = sorted[sorted.length - 2];
+    const diff = (last.value - prev.value).toFixed(1);
+    const trend = document.getElementById('statTrend');
+    trend.textContent = diff > 0 ? `▲ +${diff} vs précédent` : `▼ ${diff} vs précédent`;
+    trend.className = 'stat-trend ' + (diff > 0 ? (currentMetric==='poids'?'trend-up':'trend-up') : 'trend-down');
+  }
+  const last30 = filterByRange(30);
+  if (last30.length) {
+    const avg = (last30.reduce((s,d) => s+Number(d.value), 0) / last30.length).toFixed(1);
+    document.getElementById('statAvg').textContent = avg;
+    document.getElementById('statAvgTrend').textContent = `sur ${last30.length} mesures`;
+    document.getElementById('statAvgTrend').style.color = 'var(--muted)';
+  }
+  document.getElementById('statRange').textContent = last ? new Date(last.measured_at).toLocaleDateString('fr-FR') : '';
+}
+
+function renderChart() {
+  const m = METRICS[currentMetric];
+  const filtered = filterByRange(currentRange).sort((a,b) => new Date(a.measured_at)-new Date(b.measured_at));
+  const labels = filtered.map(d => {
+    const dt = new Date(d.measured_at);
+    return dt.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit'});
+  });
+  const values = filtered.map(d => Number(d.value));
+  const values2 = currentMetric === 'tension' ? filtered.map(d => Number(d.value2||0)) : null;
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (chart) chart.destroy();
+
+  const datasets = [{
+    label: m.label,
+    data: values,
+    borderColor: m.color,
+    backgroundColor: m.color + '22',
+    borderWidth: 2.5,
+    pointBackgroundColor: m.color,
+    pointRadius: 4,
+    pointHoverRadius: 7,
+    tension: 0.4,
+    fill: true,
+  }];
+  if (values2) {
+    datasets.push({
+      label: 'Diastolique',
+      data: values2,
+      borderColor: '#bf5af2',
+      backgroundColor: '#bf5af222',
+      borderWidth: 2,
+      pointBackgroundColor: '#bf5af2',
+      pointRadius: 3,
+      tension: 0.4,
+      fill: false,
+    });
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#86868b', font: { size: 12, family: 'Inter' } } },
+        tooltip: { backgroundColor: '#1a1a1a', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#f5f5f7', bodyColor: '#86868b', padding: 12, cornerRadius: 10 }
+      },
+      scales: {
+        x: { grid: { color: '#1e1e1e' }, ticks: { color: '#86868b', font: { size: 11 } } },
+        y: { grid: { color: '#1e1e1e' }, ticks: { color: '#86868b', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderZoneLegend() {
+  const m = METRICS[currentMetric];
+  document.getElementById('zoneLegend').innerHTML = m.zones.map(z =>
+    `<div class="zone"><div class="zone-dot" style="background:${z.color}"></div><span>${z.label}</span></div>`
+  ).join('');
+}
+
+function renderHistory() {
+  const m = METRICS[currentMetric];
+  const sorted = [...allData].sort((a,b) => new Date(b.measured_at)-new Date(a.measured_at));
+  const body = document.getElementById('historyBody');
+  document.getElementById('historyCount').textContent = `${sorted.length} entrée${sorted.length>1?'s':''}`;
+  if (!sorted.length) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><p>Aucune mesure enregistrée<br><span style="font-size:13px;">Ajoutez votre première mesure ci-dessus.</span></p></div>`;
+    return;
+  }
+  body.innerHTML = sorted.slice(0, 20).map(d => {
+    const dt = new Date(d.measured_at);
+    const dateStr = dt.toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'});
+    const timeStr = dt.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    const valStr = currentMetric==='tension' ? `${d.value}/${d.value2||'?'} ${m.unit}` : `${d.value} ${m.unit}`;
+    const bClass = m.badge(d.value);
+    const bLabel = m.badgeLabel(d.value);
+    return `<div class="history-row">
+      <div><div style="font-weight:500">${valStr}</div>${d.notes?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${d.notes}</div>`:''}</div>
+      <div class="h-date">${dateStr}</div>
+      <div class="h-date">${timeStr}</div>
+      <span class="badge badge-${bClass}">${bLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function checkAlerts() {
+  const last = allData.sort((a,b) => new Date(b.measured_at)-new Date(a.measured_at))[0];
+  const m = METRICS[currentMetric];
+  const banner = document.getElementById('alertBanner');
+  if (last && m.alert(last.value)) {
+    document.getElementById('alertMsg').textContent = m.alertMsg(last.value);
+    banner.classList.add('show');
+  } else { banner.classList.remove('show'); }
+}
+
+async function addEntry() {
+  const valEl = document.getElementById('input_val');
+  if (!valEl || !valEl.value) { alert('Entrez une valeur'); return; }
+  const val = parseFloat(valEl.value);
+  const val2El = document.getElementById('input_val2');
+  const val2 = val2El ? parseFloat(val2El.value) : null;
+  const dateEl = document.getElementById('input_date');
+  const notes = document.getElementById('input_notes')?.value || '';
+  const measuredAt = dateEl?.value ? new Date(dateEl.value).toISOString() : new Date().toISOString();
+
+  const entry = { metric_type: currentMetric, value: val, value2: val2, unit: METRICS[currentMetric].unit, measured_at: measuredAt, notes };
+
+  try {
+    const res = await fetch(`${API}/health-metrics`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    });
+    if (res.ok) { const d = await res.json(); if (d.data) entry.id = d.data.id; }
+  } catch(e) {}
+
+  // Save locally too
+  const local = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]');
+  local.push({...entry, id: entry.id || Date.now()});
+  localStorage.setItem(`ohp_metrics_${currentMetric}`, JSON.stringify(local));
+  allData = [...allData, {...entry}];
+
+  valEl.value = '';
+  if (val2El) val2El.value = '';
+  document.getElementById('input_notes').value = '';
+  const flash = document.getElementById('successFlash');
+  flash.style.display = 'block';
+  setTimeout(() => flash.style.display = 'none', 3000);
+
+  renderAll();
+}
+
+// Init
+buildForm();
+loadData();
+</script>
+</body>
+</html>
