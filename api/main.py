@@ -246,3 +246,29 @@ def get_appointments(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=503, detail="Base de données non configurée")
     result = supabase.table("appointments").select("*").eq("patient_id", user_id).order("appointment_date", desc=False).execute()
     return result.data or []
+
+# ── Modèle Message ────────────────────────────────────────────────────────────
+class MessageRequest(BaseModel):
+    content: str
+    conversation: Optional[str] = "support"
+
+# ── Routes Messages ───────────────────────────────────────────────────────────
+@app.post("/messages", status_code=201)
+def send_message(req: MessageRequest, user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    data = {
+        "user_id": user_id,
+        "content": req.content,
+        "is_from_patient": True,
+        "conversation": req.conversation,
+    }
+    result = supabase.table("messages").insert(data).execute()
+    return {"message": "Message envoyé", "data": result.data[0] if result.data else {}}
+
+@app.get("/messages")
+def get_messages(user_id: str = Depends(get_current_user)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("messages").select("*").eq("user_id", user_id).order("created_at").execute()
+    return result.data or []
