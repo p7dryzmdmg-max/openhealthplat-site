@@ -20,6 +20,13 @@
   .btn:hover{background:#0077ed;transform:scale(1.01);}
   .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
   .error{background:rgba(255,69,58,0.1);border:1px solid rgba(255,69,58,0.3);border-radius:10px;padding:12px;color:var(--red);font-size:14px;margin-bottom:16px;display:none;}
+  .server-status{display:flex;align-items:center;gap:8px;font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:16px;transition:all 0.3s;}
+  .server-status.waking{background:rgba(255,159,10,0.1);border:1px solid rgba(255,159,10,0.3);color:#ff9f0a;}
+  .server-status.ready{background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);color:var(--green);}
+  .server-status.hidden{display:none;}
+  .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:blink 1s infinite;}
+  .ready .dot{animation:none;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
   .footer-link{text-align:center;margin-top:24px;color:var(--text2);font-size:14px;}
   .footer-link a{color:var(--blue);text-decoration:none;}
   .home-link{text-align:center;margin-top:12px;}
@@ -31,6 +38,7 @@
 <div class="card">
   <h1>Connexion</h1>
   <p class="subtitle">Bienvenue ! Entrez vos identifiants.</p>
+  <div class="server-status hidden" id="serverStatus"><div class="dot"></div><span id="serverMsg"></span></div>
   <div class="error" id="error"></div>
   <form id="loginForm">
     <div class="form-group">
@@ -48,18 +56,58 @@
 </div>
 <script>
 const API = 'https://openhealthplat-site.onrender.com';
+const statusEl = document.getElementById('serverStatus');
+const statusMsg = document.getElementById('serverMsg');
+let serverReady = false;
+
+// Pré-chauffe le serveur dès l'ouverture de la page
+async function wakeServer() {
+  statusEl.className = 'server-status waking';
+  statusMsg.textContent = 'Connexion au serveur… (première connexion ~30 sec)';
+  statusEl.classList.remove('hidden');
+  for (let i = 0; i < 10; i++) {
+    try {
+      const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        serverReady = true;
+        statusEl.className = 'server-status ready';
+        statusMsg.textContent = 'Serveur prêt ✓';
+        setTimeout(() => statusEl.classList.add('hidden'), 2500);
+        return;
+      }
+    } catch(e) {}
+    await new Promise(r => setTimeout(r, 4000));
+  }
+  // Après 10 tentatives, on laisse l'utilisateur essayer quand même
+  statusEl.classList.add('hidden');
+  serverReady = true;
+}
+
+wakeServer();
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
   const errEl = document.getElementById('error');
   errEl.style.display = 'none';
   btn.disabled = true;
-  btn.textContent = 'Connexion...';
+
+  // Si serveur pas encore prêt, on attend max 20s
+  if (!serverReady) {
+    btn.textContent = '⏳ Serveur en démarrage…';
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      if (serverReady) break;
+    }
+  }
+
+  btn.textContent = 'Connexion en cours…';
   try {
     const res = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({email: document.getElementById('email').value, password: document.getElementById('password').value}),
+      signal: AbortSignal.timeout(15000)
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Identifiants incorrects');
@@ -67,7 +115,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     localStorage.setItem('ohp_user', JSON.stringify(data.user));
     window.location.href = 'dashboard.html';
   } catch(err) {
-    errEl.textContent = '❌ ' + err.message;
+    const msg = err.name === 'TimeoutError' ? 'Serveur lent, réessayez dans 15 secondes.' : err.message;
+    errEl.textContent = '❌ ' + msg;
     errEl.style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Se connecter →';
