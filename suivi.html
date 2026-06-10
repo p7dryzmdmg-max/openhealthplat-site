@@ -126,6 +126,9 @@
     <div class="mtab" data-metric="temperature" style="--active-color:#bf5af2;--active-rgb:191,90,242" onclick="switchMetric('temperature',this)">
       <div class="mtab-dot" style="background:#bf5af2"></div>Température
     </div>
+    <div class="mtab" data-metric="charge_virale" style="--active-color:#30d158;--active-rgb:48,209,88" onclick="switchMetric('charge_virale',this)">
+      <div class="mtab-dot" style="background:#30d158"></div>Charge virale
+    </div>
   </div>
 
   <!-- STATS -->
@@ -233,6 +236,21 @@ const METRICS = {
     badgeLabel: v => v < 36 ? 'Hypo' : v <= 37.5 ? 'Normal' : v <= 39 ? 'Fièvre' : 'Fièvre élevée',
     alert: v => v > 39.5,
     alertMsg: v => `⚠️ Fièvre élevée (${v}°C) — Consultez un médecin`,
+  },
+  charge_virale: {
+    label: 'Charge virale', unit: 'copies/mL', color: '#30d158',
+    chartTitle: 'Évolution de la charge virale',
+    zones: [
+      {label:'Indétectable (<40 copies/mL)', color:'#30d158'},
+      {label:'Faible (40–200 copies/mL)', color:'#ffd60a'},
+      {label:'Modérée (200–10 000)', color:'#ff9f0a'},
+      {label:'Élevée (>10 000)', color:'#ff453a'},
+    ],
+    fields: [{id:'val', label:'Charge virale (copies/mL)', type:'number', placeholder:'Ex: 40', step:'1'}],
+    badge: v => v < 40 ? 'ok' : v < 200 ? 'ok' : v < 10000 ? 'warn' : 'danger',
+    badgeLabel: v => v < 40 ? 'Indétectable' : v < 200 ? 'Faible' : v < 10000 ? 'Modérée' : 'Élevée',
+    alert: v => v > 100000,
+    alertMsg: v => `⚠️ Charge virale très élevée (${v.toLocaleString()} copies/mL) — Consultez votre médecin`,
   }
 };
 
