@@ -340,3 +340,61 @@ def get_metrics(metric_type: Optional[str] = None, user_id: str = Depends(get_cu
         query = query.eq("metric_type", metric_type)
     result = query.order("measured_at", desc=False).execute()
     return result.data or []
+
+# ── Helpers Admin ─────────────────────────────────────────────────────────────
+def require_admin(user_id: str):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("users").select("role").eq("id", user_id).execute()
+    if not result.data or result.data[0].get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+
+# ── Routes Admin ──────────────────────────────────────────────────────────────
+@app.get("/admin/stats")
+def admin_stats(user_id: str = Depends(get_current_user)):
+    require_admin(user_id)
+    total_users = supabase.table("users").select("id", count="exact").execute().count or 0
+    total_appointments = supabase.table("appointments").select("id", count="exact").execute().count or 0
+    total_teleconsultations = supabase.table("teleconsultations").select("id", count="exact").execute().count or 0
+    total_messages = supabase.table("messages").select("id", count="exact").execute().count or 0
+
+    # Rôles
+    users_data = supabase.table("users").select("role").execute().data or []
+    roles = {}
+    for u in users_data:
+        r = u.get("role", "patient")
+        roles[r] = roles.get(r, 0) + 1
+
+    # Top spécialités
+    appt_data = supabase.table("appointments").select("specialty").execute().data or []
+    specs = {}
+    for a in appt_data:
+        s = a.get("specialty", "Autre")
+        specs[s] = specs.get(s, 0) + 1
+    top_specialties = sorted([{"specialty": k, "count": v} for k, v in specs.items()], key=lambda x: -x["count"])
+
+    return {
+        "total_users": total_users,
+        "total_appointments": total_appointments,
+        "total_teleconsultations": total_teleconsultations,
+        "total_messages": total_messages,
+        "roles": roles,
+        "top_specialties": top_specialties,
+    }
+
+@app.get("/admin/users")
+def admin_list_users(user_id: str = Depends(get_current_user)):
+    require_admin(user_id)
+    result = supabase.table("users").select("id, email, full_name, role, phone, created_at").order("created_at", desc=True).execute()
+    return result.data or []
+
+class RoleUpdate(BaseModel):
+    role: str
+
+@app.put("/admin/users/{target_id}/role")
+def admin_update_role(target_id: str, req: RoleUpdate, user_id: str = Depends(get_current_user)):
+    require_admin(user_id)
+    if req.role not in ["patient", "medecin", "admin"]:
+        raise HTTPException(status_code=400, detail="Rôle invalide")
+    result = supabase.table("users").update({"role": req.role}).eq("id", target_id).execute()
+    return {"message": "Rôle mis à jour", "data": result.data[0] if result.data else {}}
