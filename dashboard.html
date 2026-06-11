@@ -18,22 +18,20 @@
   .welcome h1{font-size:28px;font-weight:600;letter-spacing:-0.03em;}
   .welcome p{color:var(--text2);font-size:15px;margin-top:4px;}
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:32px;}
-  .card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px;transition:transform 0.2s,box-shadow 0.2s;}
-  .card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:24px;transition:transform 0.2s,box-shadow 0.2s;cursor:pointer;}
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.08);}
   .card-icon{font-size:28px;margin-bottom:12px;}
   .card-title{font-size:16px;font-weight:600;margin-bottom:4px;}
   .card-desc{font-size:14px;color:var(--text2);line-height:1.5;}
-  .card-badge{display:inline-block;background:rgba(48,209,88,0.15);color:var(--green);font-size:11px;padding:3px 8px;border-radius:980px;margin-top:8px;font-weight:500;}
+  .card-badge{display:inline-block;background:rgba(94,140,82,0.15);color:var(--green);font-size:11px;padding:3px 8px;border-radius:980px;margin-top:8px;font-weight:500;}
   .profile-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px;}
   .profile-card h2{font-size:18px;font-weight:600;margin-bottom:20px;}
   .field{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
   .field:last-child{border-bottom:none;}
   .field-label{font-size:14px;color:var(--text2);}
   .field-value{font-size:14px;font-weight:500;}
-  .role-badge{background:rgba(41,151,255,0.15);color:var(--blue);font-size:12px;padding:4px 10px;border-radius:980px;font-weight:500;}
+  .role-badge{background:rgba(74,127,165,0.15);color:var(--blue);font-size:12px;padding:4px 10px;border-radius:980px;font-weight:500;}
   .loading{text-align:center;color:var(--text2);padding:60px;font-size:16px;}
-  .coming-soon{opacity:0.5;cursor:default !important;}
-  .coming-soon:hover{transform:none !important;box-shadow:none !important;}
 </style>
 </head>
 <body>
@@ -46,64 +44,50 @@
 </nav>
 
 <main>
-  <div id="loadingEl" class="loading">⏳ Chargement de votre espace...</div>
+  <div id="loadingEl" class="loading">🌿 Démarrage du serveur…</div>
   <div id="content" style="display:none">
     <div class="welcome">
       <h1>Bonjour, <span id="firstName"></span> 👋</h1>
       <p id="roleText"></p>
     </div>
-
     <div class="cards">
-      <div class="card" onclick="window.location.href='dossier.html'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='dossier.html'">
         <div class="card-icon">📋</div>
         <div class="card-title">Mon Dossier Médical</div>
         <div class="card-desc">Consultez et mettez à jour vos informations médicales, antécédents et traitements.</div>
         <div class="card-badge">✓ Disponible</div>
       </div>
-      <div class="card" onclick="window.location.href='rdv.html'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='rdv.html'">
         <div class="card-icon">📅</div>
         <div class="card-title">Rendez-vous</div>
         <div class="card-desc">Prenez rendez-vous avec un professionnel de santé.</div>
         <div class="card-badge">✓ Disponible</div>
       </div>
-      <div class="card" onclick="window.location.href='teleconsultation.html'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='teleconsultation.html'">
         <div class="card-icon">📹</div>
         <div class="card-title">Téléconsultation</div>
         <div class="card-desc">Consultez un médecin par vidéo, audio ou chat sécurisé.</div>
         <div class="card-badge">✓ Disponible</div>
       </div>
-      <div class="card" onclick="window.location.href='messagerie.html'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='messagerie.html'">
         <div class="card-icon">💬</div>
         <div class="card-title">Messagerie</div>
         <div class="card-desc">Communiquez de façon sécurisée avec vos professionnels de santé.</div>
         <div class="card-badge">✓ Disponible</div>
       </div>
-      <div class="card" onclick="window.location.href='suivi.html'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='suivi.html'">
         <div class="card-icon">📊</div>
         <div class="card-title">Suivi Santé</div>
         <div class="card-desc">Suivez glycémie, tension, poids et température avec des graphes d'évolution.</div>
         <div class="card-badge">✓ Disponible</div>
       </div>
     </div>
-
     <div class="profile-card">
       <h2>Mon profil</h2>
-      <div class="field">
-        <span class="field-label">Nom complet</span>
-        <span class="field-value" id="pName">—</span>
-      </div>
-      <div class="field">
-        <span class="field-label">Email</span>
-        <span class="field-value" id="pEmail">—</span>
-      </div>
-      <div class="field">
-        <span class="field-label">Rôle</span>
-        <span class="field-value"><span class="role-badge" id="pRole">—</span></span>
-      </div>
-      <div class="field">
-        <span class="field-label">Membre depuis</span>
-        <span class="field-value" id="pDate">—</span>
-      </div>
+      <div class="field"><span class="field-label">Nom complet</span><span class="field-value" id="pName">—</span></div>
+      <div class="field"><span class="field-label">Email</span><span class="field-value" id="pEmail">—</span></div>
+      <div class="field"><span class="field-label">Rôle</span><span class="field-value"><span class="role-badge" id="pRole">—</span></span></div>
+      <div class="field"><span class="field-label">Membre depuis</span><span class="field-value" id="pDate">—</span></div>
     </div>
   </div>
 </main>
@@ -111,14 +95,16 @@
 <script>
 const API = 'https://openhealthplat-site.onrender.com';
 
-async function wakeServer(loadingEl) {
-  loadingEl.innerHTML = '🌿 Démarrage du serveur… <span style="color:var(--text2);font-size:13px">(peut prendre ~30 sec)</span>';
+async function wakeServer() {
+  const el = document.getElementById('loadingEl');
   for (let i = 0; i < 12; i++) {
+    el.innerHTML = i === 0
+      ? '🌿 Démarrage du serveur… <span style="color:var(--text2);font-size:13px">(peut prendre ~30 sec)</span>'
+      : `🔄 Réveil du serveur… <span style="color:var(--text2);font-size:13px">(${i}/12)</span>`;
     try {
-      const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(8000) });
-      if (r.ok) { loadingEl.textContent = '✅ Serveur prêt, chargement…'; return true; }
+      const r = await fetch(API + '/health', { signal: AbortSignal.timeout(8000) });
+      if (r.ok) return true;
     } catch(e) {}
-    loadingEl.innerHTML = `🔄 Réveil du serveur… <span style="color:var(--text2);font-size:13px">(${i+1}/12)</span>`;
     await new Promise(r => setTimeout(r, 5000));
   }
   return false;
@@ -127,24 +113,20 @@ async function wakeServer(loadingEl) {
 async function loadDashboard() {
   const token = localStorage.getItem('ohp_token');
   if (!token) { window.location.href = 'login.html'; return; }
+  const el = document.getElementById('loadingEl');
 
-  const loadingEl = document.getElementById('loadingEl');
+  const awake = await wakeServer();
+  if (!awake) {
+    el.innerHTML = '❌ Serveur inaccessible. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
+    return;
+  }
+  el.textContent = '✅ Chargement de votre espace…';
 
-  const awake = await wakeServer(loadingEl);
-  if (!awake) { loadingEl.innerHTML = '❌ Serveur inaccessible. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>'; return; }
-
-  let res;
   try {
-    res = await fetch(`${API}/auth/me`, {
+    const res = await fetch(API + '/auth/me', {
       headers: { 'Authorization': 'Bearer ' + token },
       signal: AbortSignal.timeout(15000)
     });
-  } catch(e) {
-    loadingEl.innerHTML = '❌ Erreur réseau. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
-    return;
-  }
-
-  try {
     if (!res.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
     const user = await res.json();
 
@@ -156,4 +138,16 @@ async function loadDashboard() {
     document.getElementById('pRole').textContent = user.role;
     document.getElementById('pDate').textContent = new Date(user.created_at).toLocaleDateString('fr-FR', {year:'numeric',month:'long',day:'numeric'});
 
-    document.getElement
+    document.getElementById('loadingEl').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  } catch(e) {
+    el.innerHTML = '❌ Erreur de connexion. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
+  }
+}
+
+function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+loadDashboard();
+</script>
+</body>
+</html>
