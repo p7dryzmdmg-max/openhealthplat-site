@@ -15,7 +15,7 @@ from supabase import create_client, Client
 app = FastAPI(
     title="OpenHealthPlat API",
     description="Plateforme de santé numérique open source — API REST FHIR-compatible",
-    version="0.2.0-mvp",
+    version="0.3.0-mvp",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
@@ -36,29 +36,36 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
-# ── In-memory fallback (tokens + non-persistent data) ─────────────────────────
-TOKENS = {}  # token -> user_id
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def hash_pwd(pwd: str) -> str:
     return hashlib.sha256(pwd.encode()).hexdigest()
 
 def make_token(user_id: str) -> str:
     tok = secrets.token_urlsafe(32)
-    TOKENS[tok] = {"user_id": user_id, "expires": datetime.utcnow() + timedelta(hours=24)}
+    expires = (datetime.utcnow() + timedelta(days=30)).isoformat()
+    if supabase:
+        try:
+            # Nettoie les anciens tokens expirés de cet utilisateur
+            supabase.table("sessions").delete().eq("user_id", user_id).lt("expires_at", datetime.utcnow().isoformat()).execute()
+            supabase.table("sessions").insert({"token": tok, "user_id": user_id, "expires_at": expires}).execute()
+        except Exception:
+            pass
     return tok
 
 def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     if not creds:
         raise HTTPException(status_code=401, detail="Token manquant")
     tok = creds.credentials
-    if tok not in TOKENS:
-        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
-    data = TOKENS[tok]
-    if datetime.utcnow() > data["expires"]:
-        del TOKENS[tok]
-        raise HTTPException(status_code=401, detail="Token expiré")
-    return data["user_id"]
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("sessions").select("user_id, expires_at").eq("token", tok).execute()
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré — reconnectez-vous")
+    session = result.data[0]
+    if datetime.utcnow() > datetime.fromisoformat(session["expires_at"].replace("Z", "")):
+        supabase.table("sessions").delete().eq("token", tok).execute()
+        raise HTTPException(status_code=401, detail="Session expirée — reconnectez-vous")
+    return session["user_id"]
 
 # ── Modèles ───────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
@@ -162,6 +169,12 @@ def me(user_id: str = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     
     return result.data[0]
+
+@app.post("/auth/logout")
+def logout(creds: HTTPAuthorizationCredentials = Depends(security), user_id: str = Depends(get_current_user)):
+    if supabase and creds:
+        supabase.table("sessions").delete().eq("token", creds.credentials).execute()
+    return {"message": "Déconnecté avec succès"}
 
 @app.put("/auth/me")
 def update_profile(update: ProfileUpdate, user_id: str = Depends(get_current_user)):
