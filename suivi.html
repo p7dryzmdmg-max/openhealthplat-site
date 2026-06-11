@@ -9,14 +9,14 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #000; --surface: #111; --surface2: #1a1a1a; --border: #2a2a2a;
-      --text: #f5f5f7; --muted: #86868b;
-      --green: #30d158; --blue: #0a84ff; --red: #ff453a;
-      --orange: #ff9f0a; --purple: #bf5af2; --yellow: #ffd60a;
+      --bg: #F7F2EB; --surface: #FFFFFF; --surface2: #EDE8DF; --border: #D5CCC0;
+      --text: #1A1208; --muted: #7A6E62;
+      --green: #5E8C52; --blue: #4A7FA5; --red: #C0392B;
+      --orange: #C97D2A; --purple: #8B5E9B; --yellow: #C9A82A;
     }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: rgba(247,242,235,0.95); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
     .nav-logo { font-size: 17px; font-weight: 700; color: var(--green); text-decoration: none; }
     .nav-right { display: flex; align-items: center; gap: 12px; }
     .nav-user { font-size: 13px; color: var(--muted); }
@@ -457,38 +457,4 @@ async function addEntry() {
   const val2 = val2El ? parseFloat(val2El.value) : null;
   const dateEl = document.getElementById('input_date');
   const notes = document.getElementById('input_notes')?.value || '';
-  const measuredAt = dateEl?.value ? new Date(dateEl.value).toISOString() : new Date().toISOString();
-
-  const entry = { metric_type: currentMetric, value: val, value2: val2, unit: METRICS[currentMetric].unit, measured_at: measuredAt, notes };
-
-  try {
-    const res = await fetch(`${API}/health-metrics`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry)
-    });
-    if (res.ok) { const d = await res.json(); if (d.data) entry.id = d.data.id; }
-  } catch(e) {}
-
-  // Save locally too
-  const local = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]');
-  local.push({...entry, id: entry.id || Date.now()});
-  localStorage.setItem(`ohp_metrics_${currentMetric}`, JSON.stringify(local));
-  allData = [...allData, {...entry}];
-
-  valEl.value = '';
-  if (val2El) val2El.value = '';
-  document.getElementById('input_notes').value = '';
-  const flash = document.getElementById('successFlash');
-  flash.style.display = 'block';
-  setTimeout(() => flash.style.display = 'none', 3000);
-
-  renderAll();
-}
-
-// Init
-buildForm();
-loadData();
-</script>
-</body>
-</html>
+  const measuredAt = dateEl?.value ? new Date(dateEl.value).toISOString() : new Date().toISOString(
