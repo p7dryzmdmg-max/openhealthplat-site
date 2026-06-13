@@ -138,12 +138,13 @@ async function loadDashboard() {
         el.textContent = `🔄 Connexion lente… tentative ${attempt + 2}/3`;
         await new Promise(r => setTimeout(r, 6000));
       } else {
-        el.innerHTML = '❌ Erreur de connexion. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
+        localStorage.clear();
+        window.location.href = 'login.html';
         return;
       }
     }
   }
-  if (!res) return;
+  if (!res) { localStorage.clear(); window.location.href = 'login.html'; return; }
 
   try {
     if (!res.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
@@ -160,7 +161,8 @@ async function loadDashboard() {
     document.getElementById('loadingEl').style.display = 'none';
     document.getElementById('content').style.display = 'block';
   } catch(e) {
-    el.innerHTML = '❌ Erreur de connexion. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
+    localStorage.clear();
+    window.location.href = 'login.html';
   }
 }
 
