@@ -457,4 +457,48 @@ async function addEntry() {
   const val2 = val2El ? parseFloat(val2El.value) : null;
   const dateEl = document.getElementById('input_date');
   const notes = document.getElementById('input_notes')?.value || '';
-  const measuredAt = dateEl?.value ? new Date(dateEl.value).toISOString() : new Date().toISOString(
+  const measuredAt = dateEl?.value ? new Date(dateEl.value).toISOString() : new Date().toISOString();
+
+  const body = { metric_type: currentMetric, value: val, notes: notes || null, measured_at: measuredAt };
+  if (val2 !== null && !isNaN(val2)) body.value2 = val2;
+
+  try {
+    const res = await fetch(`${API}/health-metrics`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      allData.push(saved.data || body);
+    } else {
+      const stored = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]');
+      const entry = { ...body, id: Date.now() };
+      stored.push(entry);
+      localStorage.setItem(`ohp_metrics_${currentMetric}`, JSON.stringify(stored));
+      allData.push(entry);
+    }
+  } catch(e) {
+    const stored = JSON.parse(localStorage.getItem(`ohp_metrics_${currentMetric}`) || '[]');
+    const entry = { ...body, id: Date.now() };
+    stored.push(entry);
+    localStorage.setItem(`ohp_metrics_${currentMetric}`, JSON.stringify(stored));
+    allData.push(entry);
+  }
+
+  document.getElementById('input_val').value = '';
+  if (document.getElementById('input_val2')) document.getElementById('input_val2').value = '';
+  document.getElementById('input_notes').value = '';
+  const flash = document.getElementById('successFlash');
+  flash.style.display = 'block';
+  setTimeout(() => flash.style.display = 'none', 3000);
+  renderAll();
+}
+
+function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+buildForm();
+loadData();
+</script>
+</body>
+</html>
