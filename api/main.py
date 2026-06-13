@@ -36,18 +36,25 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
+# ── Sessions en mémoire (fallback fiable, pas besoin de table Supabase) ────────
+_sessions: dict = {}  # tok -> {"user_id": str, "expires_at": datetime}
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def hash_pwd(pwd: str) -> str:
     return hashlib.sha256(pwd.encode()).hexdigest()
 
 def make_token(user_id: str) -> str:
     tok = secrets.token_urlsafe(32)
-    expires = (datetime.utcnow() + timedelta(days=30)).isoformat()
+    expires = datetime.utcnow() + timedelta(days=30)
+    # Stockage mémoire (toujours disponible)
+    _sessions[tok] = {"user_id": user_id, "expires_at": expires}
+    # Tentative Supabase (silencieuse si la table n'existe pas)
     if supabase:
         try:
-            # Nettoie les anciens tokens expirés de cet utilisateur
-            supabase.table("sessions").delete().eq("user_id", user_id).lt("expires_at", datetime.utcnow().isoformat()).execute()
-            supabase.table("sessions").insert({"token": tok, "user_id": user_id, "expires_at": expires}).execute()
+            supabase.table("sessions").insert({
+                "token": tok, "user_id": user_id,
+                "expires_at": expires.isoformat()
+            }).execute()
         except Exception:
             pass
     return tok
@@ -56,16 +63,27 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
     if not creds:
         raise HTTPException(status_code=401, detail="Token manquant")
     tok = creds.credentials
-    if not supabase:
-        raise HTTPException(status_code=503, detail="Base de données non configurée")
-    result = supabase.table("sessions").select("user_id, expires_at").eq("token", tok).execute()
-    if not result.data:
-        raise HTTPException(status_code=401, detail="Token invalide ou expiré — reconnectez-vous")
-    session = result.data[0]
-    if datetime.utcnow() > datetime.fromisoformat(session["expires_at"].replace("Z", "")):
-        supabase.table("sessions").delete().eq("token", tok).execute()
-        raise HTTPException(status_code=401, detail="Session expirée — reconnectez-vous")
-    return session["user_id"]
+
+    # 1. Vérification mémoire (rapide, fiable)
+    session = _sessions.get(tok)
+    if session and datetime.utcnow() < session["expires_at"]:
+        return session["user_id"]
+
+    # 2. Fallback Supabase sessions table
+    if supabase:
+        try:
+            result = supabase.table("sessions").select("user_id, expires_at").eq("token", tok).execute()
+            if result.data:
+                s = result.data[0]
+                exp = datetime.fromisoformat(s["expires_at"].replace("Z", ""))
+                if datetime.utcnow() < exp:
+                    # Recharge en mémoire pour les prochains appels
+                    _sessions[tok] = {"user_id": s["user_id"], "expires_at": exp}
+                    return s["user_id"]
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=401, detail="Token invalide ou expiré — reconnectez-vous")
 
 # ── Modèles ───────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
