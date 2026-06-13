@@ -1,354 +1,173 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — OpenHealthPlat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #F7F2EB; --surface: #FFFFFF; --surface2: #EDE8DF; --border: #D5CCC0;
-      --text: #1A1208; --muted: #7A6E62;
-      --green: #5E8C52; --blue: #4A7FA5; --red: #C0392B; --orange: #C97D2A; --purple: #8B5E9B;
-    }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-    /* NAV */
-    nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
-    .nav-left { display: flex; align-items: center; gap: 16px; }
-    .nav-logo { font-size: 16px; font-weight: 700; color: var(--green); }
-    .admin-badge { background: rgba(255,69,58,0.15); color: var(--red); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,69,58,0.3); letter-spacing: 0.08em; }
-    .nav-user { font-size: 13px; color: var(--muted); }
-    .btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-
-    /* ACCESS DENIED */
-    .access-denied { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; gap: 16px; }
-    .access-denied.show { display: flex; }
-
-    /* MAIN */
-    main { max-width: 1100px; margin: 0 auto; padding: 36px 24px 60px; }
-    h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-    .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
-
-    /* STATS GRID */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-    .stat-icon { font-size: 24px; margin-bottom: 10px; }
-    .stat-num { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-    .stat-label { font-size: 13px; color: var(--muted); }
-    .stat-trend { font-size: 12px; color: var(--green); margin-top: 6px; }
-
-    /* SECTION */
-    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
-    .section-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .section-title { font-size: 15px; font-weight: 600; }
-    .section-count { font-size: 13px; color: var(--muted); }
-
-    /* TABLE */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { padding: 12px 18px; text-align: left; font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: var(--surface2); }
-    td { padding: 14px 18px; font-size: 14px; }
-    .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0; }
-    .user-info { display: flex; align-items: center; gap: 12px; }
-    .user-name { font-weight: 500; }
-    .user-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .badge-patient { background: rgba(10,132,255,0.15); color: var(--blue); }
-    .badge-admin { background: rgba(255,69,58,0.15); color: var(--red); }
-    .badge-medecin { background: rgba(48,209,88,0.15); color: var(--green); }
-    .date-cell { color: var(--muted); font-size: 13px; }
-
-    /* MODAL */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(247,242,235,0.92); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; }
-    .modal-overlay.show { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; max-width: 480px; width: 100%; }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .modal-title { font-size: 18px; font-weight: 700; }
-    .modal-close { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-    .modal-field { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-    .modal-field:last-child { border-bottom: none; }
-    .field-key { color: var(--muted); }
-    .field-val { font-weight: 500; text-align: right; max-width: 240px; word-break: break-all; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
-    .btn-danger { background: rgba(255,69,58,0.15); color: var(--red); border: 1px solid rgba(255,69,58,0.3); padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
-    .btn-promote { background: rgba(48,209,88,0.15); color: var(--green); border: 1px solid rgba(48,209,88,0.3); padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; }
-
-    /* CHART */
-    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
-    .mini-chart { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
-    .mini-chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-    .bar-row { display: flex; align-items: center; gap: 10px; }
-    .bar-label { font-size: 12px; color: var(--muted); width: 120px; flex-shrink: 0; }
-    .bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
-    .bar-count { font-size: 12px; font-weight: 600; width: 30px; text-align: right; }
-
-    .loading-state { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
-    .empty-state { text-align: center; padding: 40px; color: var(--muted); }
-
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .chart-row { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — OpenHealthPlat</title>
+<style>
+  :root{--bg:#F7F2EB;--bg2:#FFFFFF;--bg3:#EDE8DF;--border:rgba(0,0,0,0.10);--text:#1A1208;--text2:#6B5E52;--blue:#4A7FA5;--green:#5E8C52;--orange:#C97D2A;--red:#C0392B;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',sans-serif;min-height:100vh;}
+  nav{position:fixed;top:0;width:100%;background:rgba(247,242,235,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100;}
+  .nav-logo{font-size:16px;font-weight:600;color:var(--blue);}
+  .nav-badge{background:rgba(74,127,165,0.15);color:var(--blue);font-size:11px;padding:3px 8px;border-radius:980px;font-weight:600;margin-left:8px;}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-user{font-size:14px;color:var(--text2);}
+  .btn-sm{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:980px;font-size:13px;cursor:pointer;text-decoration:none;}
+  .btn-sm:hover{border-color:var(--red);color:var(--red);}
+  main{padding-top:72px;padding-bottom:60px;max-width:1000px;margin:0 auto;padding-left:24px;padding-right:24px;}
+  .page-title{font-size:26px;font-weight:600;letter-spacing:-0.03em;margin-bottom:4px;}
+  .page-sub{color:var(--text2);font-size:14px;margin-bottom:32px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:32px;}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;}
+  .stat-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+  .stat-value{font-size:32px;font-weight:700;line-height:1;}
+  .stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+  .section{background:var(--bg2);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:24px;}
+  .section-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .section-title{font-size:15px;font-weight:600;}
+  .user-row{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);font-size:14px;}
+  .user-row:last-child{border-bottom:none;}
+  .user-row:hover{background:var(--bg3);}
+  .user-name{font-weight:500;}
+  .user-email{font-size:13px;color:var(--text2);}
+  .role-select{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;color:var(--text);cursor:pointer;outline:none;}
+  .role-select:focus{border-color:var(--blue);}
+  .btn-update{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.2s;}
+  .btn-update:hover{background:#3a6f95;}
+  .date-cell{font-size:12px;color:var(--text2);}
+  .loading{text-align:center;padding:40px;color:var(--text2);font-size:15px;}
+  .empty{text-align:center;padding:40px;color:var(--text2);}
+  .roles-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px 20px;}
+  .role-chip{background:var(--bg3);border-radius:10px;padding:12px 18px;text-align:center;}
+  .role-chip-count{font-size:22px;font-weight:700;}
+  .role-chip-label{font-size:12px;color:var(--text2);margin-top:2px;}
+</style>
 </head>
 <body>
-
 <nav>
-  <div class="nav-left">
+  <div style="display:flex;align-items:center">
     <div class="nav-logo">🌿 OpenHealthPlat</div>
-    <span class="admin-badge">ADMIN</span>
+    <span class="nav-badge">ADMIN</span>
   </div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span class="nav-user" id="navUser"></span>
-    <a href="dashboard.html" style="color:var(--muted);font-size:13px;text-decoration:none;">← Dashboard</a>
-    <button class="btn-logout" onclick="logout()">Déconnexion</button>
+  <div class="nav-right">
+    <span class="nav-user" id="navName"></span>
+    <a href="dashboard.html" class="btn-sm">← Dashboard</a>
+    <button class="btn-sm" onclick="logout()">Déconnexion</button>
   </div>
 </nav>
 
-<!-- ACCESS DENIED -->
-<div class="access-denied" id="accessDenied">
-  <div style="font-size:64px">🚫</div>
-  <h2>Accès refusé</h2>
-  <p style="color:var(--muted);max-width:320px">Seuls les comptes avec le rôle <strong>admin</strong> peuvent accéder à ce panneau.</p>
-  <a href="dashboard.html" style="background:var(--blue);color:#fff;padding:12px 28px;border-radius:12px;text-decoration:none;font-weight:600;margin-top:8px">Retour au tableau de bord</a>
-</div>
+<main>
+  <div class="page-title">🔐 Panel Administrateur</div>
+  <p class="page-sub" id="pageSubtitle">Chargement...</p>
 
-<main id="mainContent" style="display:none">
-  <h1>🛡️ Panneau d'administration</h1>
-  <p class="subtitle" id="adminSubtitle">Chargement…</p>
-
-  <!-- STATS -->
   <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div class="stat-num" id="statUsers">—</div>
-      <div class="stat-label">Utilisateurs inscrits</div>
-      <div class="stat-trend" id="statUsersNew"></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📅</div>
-      <div class="stat-num" id="statAppt">—</div>
-      <div class="stat-label">Rendez-vous total</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📹</div>
-      <div class="stat-num" id="statTele">—</div>
-      <div class="stat-label">Téléconsultations</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">💬</div>
-      <div class="stat-num" id="statMsg">—</div>
-      <div class="stat-label">Messages envoyés</div>
-    </div>
+    <div class="stat"><div class="stat-label">Utilisateurs</div><div class="stat-value" id="sUsers">—</div><div class="stat-sub">inscrits</div></div>
+    <div class="stat"><div class="stat-label">Rendez-vous</div><div class="stat-value" id="sRdv">—</div><div class="stat-sub">total</div></div>
+    <div class="stat"><div class="stat-label">Téléconsultations</div><div class="stat-value" id="sTele">—</div><div class="stat-sub">total</div></div>
+    <div class="stat"><div class="stat-label">Messages</div><div class="stat-value" id="sMsg">—</div><div class="stat-sub">échangés</div></div>
   </div>
 
-  <!-- CHARTS -->
-  <div class="chart-row">
-    <div class="mini-chart">
-      <div class="mini-chart-title">👥 Répartition des rôles</div>
-      <div class="bar-chart" id="rolesChart"></div>
-    </div>
-    <div class="mini-chart">
-      <div class="mini-chart-title">📅 Spécialités les + demandées</div>
-      <div class="bar-chart" id="specsChart"></div>
-    </div>
+  <div class="section" style="margin-bottom:24px">
+    <div class="section-header"><span class="section-title">Répartition par rôle</span></div>
+    <div class="roles-bar" id="rolesBar"><div class="loading">Chargement...</div></div>
   </div>
 
-  <!-- USERS TABLE -->
   <div class="section">
     <div class="section-header">
-      <div class="section-title">Tous les utilisateurs</div>
-      <div class="section-count" id="usersCount"></div>
+      <span class="section-title">Utilisateurs</span>
+      <span style="font-size:12px;color:var(--text2)" id="userCount"></span>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Utilisateur</th>
-            <th>Rôle</th>
-            <th>Téléphone</th>
-            <th>Inscrit le</th>
-          </tr>
-        </thead>
-        <tbody id="usersTable">
-          <tr><td colspan="4" class="loading-state">⏳ Chargement…</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div id="usersList"><div class="loading">Chargement des utilisateurs...</div></div>
   </div>
 </main>
-
-<!-- USER MODAL -->
-<div class="modal-overlay" id="userModal" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalName">—</div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div id="modalBody"></div>
-    <div class="modal-actions">
-      <button class="btn-promote" id="modalPromote" onclick="promoteUser()">⬆ Passer admin</button>
-    </div>
-  </div>
-</div>
 
 <script>
 const API = 'https://openhealthplat-site.onrender.com';
 const token = localStorage.getItem('ohp_token');
 const user = JSON.parse(localStorage.getItem('ohp_user') || '{}');
 if (!token) { window.location.href = 'login.html'; }
-
-let allUsers = [];
-let selectedUser = null;
-
-const AVATAR_COLORS = ['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff453a','#64d2ff'];
-function avatarColor(name) { let h = 0; for(let c of (name||'?')) h += c.charCodeAt(0); return AVATAR_COLORS[h % AVATAR_COLORS.length]; }
-function initials(name) { if(!name) return '?'; const p = name.trim().split(' '); return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+document.getElementById('navName').textContent = user.full_name || '';
 
 async function loadAdmin() {
-  // Check role from API
   try {
-    const meRes = await fetch(`${API}/auth/me`, { headers: {'Authorization':`Bearer ${token}`} });
-    if (!meRes.ok) { window.location.href = 'login.html'; return; }
-    const me = await meRes.json();
-    document.getElementById('navUser').textContent = me.full_name;
+    const [statsRes, usersRes] = await Promise.all([
+      fetch(API + '/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch(API + '/admin/users', { headers: { 'Authorization': 'Bearer ' + token } })
+    ]);
 
-    if (me.role !== 'admin') {
-      document.getElementById('accessDenied').classList.add('show');
+    if (statsRes.status === 403 || usersRes.status === 403) {
+      document.getElementById('pageSubtitle').textContent = 'Accès refusé — compte non-admin';
+      document.getElementById('usersList').innerHTML = '<div class="empty">Votre compte n\'a pas les droits administrateur.</div>';
       return;
     }
-
-    document.getElementById('mainContent').style.display = 'block';
-    document.getElementById('adminSubtitle').textContent = `Connecté en tant que ${me.full_name} · ${new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}`;
-
-    await Promise.all([loadStats(), loadUsers()]);
-  } catch(e) {
-    document.getElementById('accessDenied').classList.add('show');
-  }
-}
-
-async function loadStats() {
-  try {
-    const res = await fetch(`${API}/admin/stats`, { headers: {'Authorization':`Bearer ${token}`} });
-    if (!res.ok) return;
-    const s = await res.json();
-    document.getElementById('statUsers').textContent = s.total_users ?? '—';
-    document.getElementById('statAppt').textContent = s.total_appointments ?? '—';
-    document.getElementById('statTele').textContent = s.total_teleconsultations ?? '—';
-    document.getElementById('statMsg').textContent = s.total_messages ?? '—';
-
-    // Roles chart
-    if (s.roles) {
-      const total = Object.values(s.roles).reduce((a,b)=>a+b,0);
-      const colors = {patient:'#0a84ff', admin:'#ff453a', medecin:'#30d158'};
-      document.getElementById('rolesChart').innerHTML = Object.entries(s.roles).map(([role, count]) =>
-        `<div class="bar-row">
-          <div class="bar-label">${role.charAt(0).toUpperCase()+role.slice(1)}</div>
-          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(count/total*100)}%;background:${colors[role]||'#86868b'}"></div></div>
-          <div class="bar-count" style="color:${colors[role]||'#86868b'}">${count}</div>
-        </div>`).join('');
+    if (statsRes.status === 401 || usersRes.status === 401) {
+      localStorage.clear(); window.location.href = 'login.html'; return;
     }
-    // Specs chart
-    if (s.top_specialties) {
-      const max = Math.max(...s.top_specialties.map(x=>x.count), 1);
-      document.getElementById('specsChart').innerHTML = s.top_specialties.slice(0,5).map(x =>
-        `<div class="bar-row">
-          <div class="bar-label" style="font-size:11px">${x.specialty}</div>
-          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(x.count/max*100)}%;background:var(--orange)"></div></div>
-          <div class="bar-count" style="color:var(--orange)">${x.count}</div>
-        </div>`).join('');
+    if (!statsRes.ok || !usersRes.ok) throw new Error('Erreur serveur');
+
+    const stats = await statsRes.json();
+    const users = await usersRes.json();
+
+    document.getElementById('sUsers').textContent = stats.total_users || 0;
+    document.getElementById('sRdv').textContent = stats.total_appointments || 0;
+    document.getElementById('sTele').textContent = stats.total_teleconsultations || 0;
+    document.getElementById('sMsg').textContent = stats.total_messages || 0;
+    document.getElementById('pageSubtitle').textContent = 'Bienvenue, ' + (user.full_name || '') + ' — ' + (stats.total_users || 0) + ' utilisateur(s)';
+
+    const roles = stats.roles || {};
+    const roleLabels = { patient: 'Patients', medecin: 'Médecins', admin: 'Admins' };
+    const roleColors = { patient: 'var(--text)', medecin: 'var(--green)', admin: 'var(--blue)' };
+    document.getElementById('rolesBar').innerHTML = Object.entries(roles).map(([role, count]) =>
+      '<div class="role-chip"><div class="role-chip-count" style="color:' + (roleColors[role]||'var(--text)') + '">' + count + '</div><div class="role-chip-label">' + (roleLabels[role]||role) + '</div></div>'
+    ).join('') || '<div style="padding:8px;color:var(--text2);font-size:14px">Aucun utilisateur</div>';
+
+    document.getElementById('userCount').textContent = users.length + ' utilisateur' + (users.length > 1 ? 's' : '');
+    if (!users.length) {
+      document.getElementById('usersList').innerHTML = '<div class="empty">Aucun utilisateur</div>';
+      return;
     }
-  } catch(e) {}
-}
-
-async function loadUsers() {
-  try {
-    const res = await fetch(`${API}/admin/users`, { headers: {'Authorization':`Bearer ${token}`} });
-    if (!res.ok) throw new Error();
-    allUsers = await res.json();
+    document.getElementById('usersList').innerHTML = users.map(u =>
+      '<div class="user-row" id="row_' + u.id + '">' +
+        '<div><div class="user-name">' + u.full_name + '</div><div class="user-email">' + u.email + '</div></div>' +
+        '<div class="date-cell">' + new Date(u.created_at).toLocaleDateString('fr-FR') + '</div>' +
+        '<select class="role-select" id="role_' + u.id + '" onchange="showUpdate(\'' + u.id + '\')">' +
+          '<option value="patient"' + (u.role==='patient'?' selected':'') + '>Patient</option>' +
+          '<option value="medecin"' + (u.role==='medecin'?' selected':'') + '>Médecin</option>' +
+          '<option value="admin"' + (u.role==='admin'?' selected':'') + '>Admin</option>' +
+        '</select>' +
+        '<button class="btn-update" id="btn_' + u.id + '" style="opacity:0" onclick="updateRole(\'' + u.id + '\')">Sauver</button>' +
+      '</div>'
+    ).join('');
   } catch(e) {
-    // Fallback: use /auth/me data
-    allUsers = [user];
-  }
-  renderUsers();
-}
-
-function renderUsers() {
-  document.getElementById('usersCount').textContent = `${allUsers.length} utilisateur${allUsers.length>1?'s':''}`;
-  if (!allUsers.length) {
-    document.getElementById('usersTable').innerHTML = '<tr><td colspan="4" class="empty-state">Aucun utilisateur</td></tr>';
-    return;
-  }
-  const months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
-  document.getElementById('usersTable').innerHTML = allUsers.map(u => {
-    const d = u.created_at ? new Date(u.created_at) : null;
-    const dateStr = d ? `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}` : '—';
-    const roleClass = u.role === 'admin' ? 'badge-admin' : u.role === 'medecin' ? 'badge-medecin' : 'badge-patient';
-    const color = avatarColor(u.full_name);
-    return `<tr onclick="openModal('${u.id}')">
-      <td><div class="user-info">
-        <div class="avatar" style="background:${color}">${initials(u.full_name)}</div>
-        <div><div class="user-name">${u.full_name||'—'}</div><div class="user-email">${u.email}</div></div>
-      </div></td>
-      <td><span class="badge ${roleClass}">${u.role||'patient'}</span></td>
-      <td class="date-cell">${u.phone||'—'}</td>
-      <td class="date-cell">${dateStr}</td>
-    </tr>`;
-  }).join('');
-}
-
-function openModal(userId) {
-  selectedUser = allUsers.find(u => u.id === userId);
-  if (!selectedUser) return;
-  document.getElementById('modalName').textContent = selectedUser.full_name || '—';
-  const months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
-  const d = selectedUser.created_at ? new Date(selectedUser.created_at) : null;
-  const dateStr = d ? `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}` : '—';
-  document.getElementById('modalBody').innerHTML = `
-    <div class="modal-field"><span class="field-key">Email</span><span class="field-val">${selectedUser.email}</span></div>
-    <div class="modal-field"><span class="field-key">Rôle</span><span class="field-val">${selectedUser.role||'patient'}</span></div>
-    <div class="modal-field"><span class="field-key">Téléphone</span><span class="field-val">${selectedUser.phone||'—'}</span></div>
-    <div class="modal-field"><span class="field-key">Inscrit le</span><span class="field-val">${dateStr}</span></div>
-    <div class="modal-field"><span class="field-key">ID</span><span class="field-val" style="font-size:11px;font-family:monospace">${selectedUser.id}</span></div>`;
-  document.getElementById('modalPromote').textContent = selectedUser.role === 'admin' ? '⬇ Retirer admin' : '⬆ Passer admin';
-  document.getElementById('userModal').classList.add('show');
-}
-
-function closeModal(e) {
-  if (!e || e.target === document.getElementById('userModal')) {
-    document.getElementById('userModal').classList.remove('show');
+    document.getElementById('pageSubtitle').textContent = 'Erreur de chargement';
+    document.getElementById('usersList').innerHTML = '<div class="empty">' + e.message + '</div>';
   }
 }
 
-async function promoteUser() {
-  if (!selectedUser) return;
-  const newRole = selectedUser.role === 'admin' ? 'patient' : 'admin';
+function showUpdate(id) { document.getElementById('btn_' + id).style.opacity = '1'; }
+
+async function updateRole(userId) {
+  const role = document.getElementById('role_' + userId).value;
+  const btn = document.getElementById('btn_' + userId);
+  btn.textContent = '…';
   try {
-    await fetch(`${API}/admin/users/${selectedUser.id}/role`, {
+    const res = await fetch(API + '/admin/users/' + userId + '/role', {
       method: 'PUT',
-      headers: {'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
-      body: JSON.stringify({role: newRole})
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role })
     });
-    selectedUser.role = newRole;
-    const idx = allUsers.findIndex(u => u.id === selectedUser.id);
-    if (idx >= 0) allUsers[idx].role = newRole;
-    renderUsers();
-    closeModal();
-  } catch(e) { alert('Erreur lors de la mise à jour du rôle'); }
+    if (res.ok) {
+      btn.textContent = '✓'; btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = 'Sauver'; btn.style.background = ''; btn.style.opacity = '0'; }, 2000);
+    } else {
+      btn.textContent = '✗'; btn.style.background = 'var(--red)';
+      setTimeout(() => { btn.textContent = 'Sauver'; btn.style.background = ''; }, 2000);
+    }
+  } catch(e) { btn.textContent = '✗'; btn.style.background = 'var(--red)'; }
 }
 
 function logout() { localStorage.clear(); window.location.href = 'login.html'; }
-
 loadAdmin();
 </script>
 </body>

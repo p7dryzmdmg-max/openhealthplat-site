@@ -31,6 +31,11 @@
   .footer-link a{color:var(--blue);text-decoration:none;}
   .home-link{text-align:center;margin-top:12px;}
   .home-link a{color:var(--text2);font-size:13px;text-decoration:none;}
+  .admin-shortcut{text-align:center;margin-top:16px;}
+  .admin-btn{background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;opacity:0.5;transition:opacity 0.2s;letter-spacing:0.02em;}
+  .admin-btn:hover{opacity:1;}
+  .admin-badge{display:none;align-items:center;gap:8px;background:rgba(74,127,165,0.1);border:1px solid rgba(74,127,165,0.3);border-radius:10px;padding:10px 14px;color:var(--blue);font-size:13px;font-weight:500;margin-bottom:16px;}
+  .admin-badge.show{display:flex;}
 </style>
 </head>
 <body>
@@ -39,6 +44,7 @@
   <h1>Connexion</h1>
   <p class="subtitle">Bienvenue ! Entrez vos identifiants.</p>
   <div class="server-status hidden" id="serverStatus"><div class="dot"></div><span id="serverMsg"></span></div>
+  <div class="admin-badge" id="adminBadge">🔐 Mode Administrateur activé</div>
   <div class="error" id="error"></div>
   <form id="loginForm">
     <div class="form-group">
@@ -53,12 +59,22 @@
   </form>
   <div class="footer-link">Pas encore de compte ? <a href="register.html">S'inscrire gratuitement</a></div>
   <div class="home-link"><a href="index.html">← Retour à l'accueil</a></div>
+  <div class="admin-shortcut"><button class="admin-btn" onclick="toggleAdmin()">🔐 Admin</button></div>
 </div>
 <script>
 const API = 'https://openhealthplat-site.onrender.com';
 const statusEl = document.getElementById('serverStatus');
 const statusMsg = document.getElementById('serverMsg');
 let serverReady = false;
+let adminMode = false;
+
+function toggleAdmin() {
+  adminMode = !adminMode;
+  const badge = document.getElementById('adminBadge');
+  badge.classList.toggle('show', adminMode);
+  document.querySelector('h1').textContent = adminMode ? 'Accès Administrateur' : 'Connexion';
+  if (adminMode) document.getElementById('email').focus();
+}
 
 // Pré-chauffe le serveur dès l'ouverture de la page
 async function wakeServer() {
@@ -113,7 +129,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     if (!res.ok) throw new Error(data.detail || 'Identifiants incorrects');
     localStorage.setItem('ohp_token', data.token);
     localStorage.setItem('ohp_user', JSON.stringify(data.user));
-    window.location.href = 'dashboard.html';
+    // Redirection selon rôle ou mode admin
+    const isAdmin = data.user.role === 'admin' || adminMode;
+    window.location.href = isAdmin ? 'admin.html' : 'dashboard.html';
   } catch(err) {
     const msg = err.name === 'TimeoutError' ? 'Serveur lent, réessayez dans 15 secondes.' : err.message;
     errEl.textContent = '❌ ' + msg;
