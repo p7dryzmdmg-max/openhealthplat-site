@@ -120,13 +120,32 @@ async function loadDashboard() {
     el.innerHTML = '❌ Serveur inaccessible. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
     return;
   }
+  // Pause 3s après /health — la 1ère connexion Supabase prend quelques sec
+  el.textContent = '🔗 Connexion à la base de données…';
+  await new Promise(r => setTimeout(r, 3000));
   el.textContent = '✅ Chargement de votre espace…';
 
+  let res = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch(API + '/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token },
+        signal: AbortSignal.timeout(30000)
+      });
+      break;
+    } catch(e) {
+      if (attempt < 2) {
+        el.textContent = `🔄 Connexion lente… tentative ${attempt + 2}/3`;
+        await new Promise(r => setTimeout(r, 6000));
+      } else {
+        el.innerHTML = '❌ Erreur de connexion. <a href="javascript:location.reload()" style="color:var(--blue)">Réessayer</a>';
+        return;
+      }
+    }
+  }
+  if (!res) return;
+
   try {
-    const res = await fetch(API + '/auth/me', {
-      headers: { 'Authorization': 'Bearer ' + token },
-      signal: AbortSignal.timeout(15000)
-    });
     if (!res.ok) { localStorage.clear(); window.location.href = 'login.html'; return; }
     const user = await res.json();
 
