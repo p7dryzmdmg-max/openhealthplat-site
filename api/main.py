@@ -85,6 +85,16 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
 
     raise HTTPException(status_code=401, detail="Token invalide ou expiré — reconnectez-vous")
 
+# ── Init admin (TEMPORAIRE — à supprimer après usage) ─────────────────────────
+@app.post("/setup/init-admin")
+def init_admin(email: str):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Base de données non configurée")
+    result = supabase.table("users").update({"role": "admin"}).eq("email", email).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Email introuvable")
+    return {"message": f"✅ {email} est maintenant admin", "user": result.data[0]}
+
 # ── Modèles ───────────────────────────────────────────────────────────────────
 class RegisterRequest(BaseModel):
     email: EmailStr
